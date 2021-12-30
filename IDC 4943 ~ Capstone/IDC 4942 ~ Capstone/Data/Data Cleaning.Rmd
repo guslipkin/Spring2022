@@ -1,0 +1,206 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# To Do
+- Why is CMS_20 empty?
+- Double check that CMS_41 is yes/no
+
+
+```{r}
+library(stringr)
+library(tidyverse)
+library(data.table)
+```
+
+```{r}
+ConnectCalls <- fread("/Users/guslipkin/Downloads/Florida Poly- Senior Capstone Group/ConnectCalls.csv", na.strings = "")
+colnames(ConnectCalls) <- c("EncounterID",
+                            "LastStatus",
+                            "UpdatedOn",
+                            "AQ1", "AQ1_Date",
+                            "AQ2", "AQ2_Date",
+                            "AQ3", "AQ3_Date",
+                            "AQ4", "AQ4_Date",
+                            "AQ5", "AQ5_Date",
+                            "AQ6", "AQ6_Date",
+                            "AQ7", "AQ7_Date",
+                            "AQ8", "AQ8_Date",
+                            "AQ9", "AQ9_Date",
+                            "AQ10", "AQ10_Date",
+                            "AQ11", "AQ11_Date",
+                            "AQ12", "AQ12_Date",
+                            "AQ13", "AQ13_Date",
+                            "AQ14", "AQ14_Date",
+                            "AQ15", "AQ15_Date",
+                            "AQ16", "AQ16_Date",
+                            "AQ17", "AQ17_Date",
+                            "AQ18", "AQ18_Date",
+                            "AQ19", "AQ19_Date",
+                            "AQ20", "AQ20_Date",
+                            "AQ21", "AQ21_Date",
+                            "AQ22", "AQ22_Date",
+                            "AQ23", "AQ23_Date",
+                            "AQ24", "AQ24_Date")
+
+factorCols <- c("EncounterID", "LastStatus", 
+                names(ConnectCalls)[names(ConnectCalls) %like% "AQ[0-9]{1,2}$"])
+ConnectCalls[, (factorCols) := lapply(.SD, as.factor), .SDcols = factorCols]
+
+dateCols <- c("UpdatedOn", 
+              names(ConnectCalls)[names(ConnectCalls) %like% "AQ[0-9]{1,2}_Date"])
+dateFun <- function(x) as.Date(x, format = "%m/%d/%y")
+ConnectCalls[, (dateCols) := lapply(.SD, dateFun), .SDcols = dateCols]
+
+head(ConnectCalls)
+```
+
+
+```{r}
+aqCols <- c("EncounterID", "LastStatus", "UpdatedOn",
+            names(ConnectCalls)[names(ConnectCalls) %like% "AQ[0-9]{1,2}$"])
+ConnectLongerAQ <- melt.data.table(ConnectCalls[!is.na(EncounterID), ..aqCols],
+                                 measure.vars = paste0("AQ", 1:24),
+                                variable.name = "AQ_Number",
+                                value.name = "AQ_Value")
+
+aqCols <- c("EncounterID", "LastStatus", "UpdatedOn",
+  names(ConnectCalls)[names(ConnectCalls) %like% "AQ[0-9]{1,2}_Date"])
+ConnectLongerAQDate <- melt.data.table(ConnectCalls[!is.na(EncounterID), ..aqCols],
+                                       measure.vars = paste0("AQ", 1:24, "_Date"),
+                                       variable.name = "AQ_Number",
+                                       value.name = "AQ_Date")
+
+ConnectLongerAQDate[, AQ_Number := str_replace(AQ_Number, "_Date", "")]
+
+ConnectLonger <- merge(ConnectLongerAQ, ConnectLongerAQDate)[!is.na(AQ_Value)]
+rm(ConnectLongerAQ, ConnectLongerAQDate)
+head(ConnectLonger)
+
+ConnectLonger[, .N, by = "AQ_Value"][order(desc(N))] %>%
+  ggplot(aes(x = AQ_Value, y = N, label = N)) +
+  geom_col(fill = "lightblue") +
+  geom_text(size = 5, position = position_stack(vjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r}
+Surveys <- fread("/Users/guslipkin/Downloads/Florida Poly- Senior Capstone Group/Surveys.csv", na.strings = "")
+
+factorCols <- c(names(Surveys)[! names(Surveys) %in% c("AdmitDate",
+                                                       "CMS_Reportable",
+                                                       "MortalityFlag")])
+Surveys[, (factorCols) := lapply(.SD, as.factor), .SDcols = factorCols]
+
+dateCols <- c("AdmitDate")
+dateFun <- function(x) as.Date(x, format = "%m/%d/%y")
+Surveys[, (dateCols) := lapply(.SD, dateFun), .SDcols = dateCols]
+
+Surveys$CMS_Reportable <- ifelse(Surveys$CMS_Reportable == "Yes", TRUE, FALSE)
+Surveys$MortalityFlag <- ifelse(Surveys$MortalityFlag == "Y", TRUE, FALSE)
+
+logicalCols <- c("CMS_12", "CMS_18", "CMS_21")
+logicalFun <- function(x) ifelse(x == 1, TRUE, FALSE)
+Surveys[, (logicalCols) := lapply(.SD, logicalFun), .SDcols = logicalCols]
+Surveys <- Surveys[, -c("CMS_42", "CMS_43", "CMS_44")]
+
+head(Surveys)
+```
+
+```{r}
+cmsCols <- c("SurveyID", 
+            names(Surveys)[names(Surveys) %like% "CMS_[0-9]{1,2}$"])
+SurveysLonger <- melt.data.table(Surveys[!is.na(SurveyID), ..cmsCols],
+                                 measure.vars = paste0("CMS_", c(1:3, 6:8, 10:13, 
+                                                                 18:28, 30, 33:34, 
+                                                                 37:41)),
+                                 variable.name = "CMS_Number",
+                                 value.name = "CMS_Response")[!is.na(CMS_Response)]
+
+SurveysLonger[!(CMS_Number %in% c("CMS_12", "CMS_18", "CMS_21", "CMS_23"))] %>%
+  .[, CMS_Response := as.factor(CMS_Response)] %>%
+  .[, .N, by = list(CMS_Number, CMS_Response)] %>%
+  ggplot(aes(x = CMS_Number, y = N, fill = factor(CMS_Response, levels = c(5:0)))) +
+  geom_bar(position = "fill", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.title = element_blank())
+
+SurveysLonger[(CMS_Number %in% c("CMS_12", "CMS_18", "CMS_21"))] %>%
+  .[, CMS_Response := as.factor(CMS_Response)] %>%
+  .[, .N, by = list(CMS_Number, CMS_Response)] %>%
+  ggplot(aes(x = CMS_Number, y = N, fill = CMS_Response)) +
+  geom_bar(position = "fill", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.title = element_blank())
+
+SurveysLonger[CMS_Number == "CMS_23"] %>%
+  .[, CMS_Response := as.factor(CMS_Response)] %>%
+  .[, .N, by = list(CMS_Number, CMS_Response)] %>%
+  ggplot(aes(x = CMS_Number, y = N, fill = factor(CMS_Response, levels = c(10:0)))) +
+  geom_bar(position = "fill", stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.title = element_blank())
+```
+
+
+```{r}
+Readmissions <- fread("/Users/guslipkin/Downloads/Florida Poly- Senior Capstone Group/Readmissions.csv", na.strings = "")
+
+colnames(Readmissions) <- str_replace_all(names(Readmissions), 
+                                          pattern = " ", 
+                                          replacement = "")
+
+factorCols <- c(names(Readmissions)[! names(Readmissions) %in% c("IndexDischDate", 
+                                                                 "ReadmitDate", 
+                                                                 "DaysBetweenAdmssions", 
+                                                                 "ReadmitDischargeDate", 
+                                                                 "ReadmitInfo.Age")])
+Readmissions[, (factorCols) := lapply(.SD, as.factor), .SDcols = factorCols]
+
+dateCols <- c("IndexDischDate", "ReadmitDate", "ReadmitDischargeDate")
+dateFun <- function(x) as.Date(x, format = "%m/%d/%y")
+Readmissions[, (dateCols) := lapply(.SD, dateFun), .SDcols = dateCols]
+
+head(Readmissions)
+```
+
+
+```{r}
+Encounters <- fread("/Users/guslipkin/Downloads/Florida Poly- Senior Capstone Group/Encounters.csv", na.strings = "")
+
+colnames(Encounters) <- str_replace_all(names(Encounters), 
+                                        pattern = " ", 
+                                        replacement = "")
+
+factorCols <- c(names(Encounters)[! names(Encounters) %in% c("AdmitDate", 
+                                                             "DischargeDate", 
+                                                             "Age")])
+Encounters[, (factorCols) := lapply(.SD, as.factor), .SDcols = factorCols]
+
+dateCols <- c("AdmitDate", "DischargeDate")
+dateFun <- function(x) as.Date(x, format = "%m/%d/%y")
+Encounters[, (dateCols) := lapply(.SD, dateFun), .SDcols = dateCols]
+
+Encounters[EncounterID %in% c("40347"), Age := 43]
+Encounters[!(EncounterID %in% c("22924", 
+                                "34029",
+                                "35544",
+                                "44683",
+                                "56159",
+                                "68750")) | Age <= 110]
+
+head(Encounters)
+```
+
+```{r}
+merge(Encounters, 
+      merge(Surveys,
+            merge(ConnectCalls,
+                  Readmissions,
+                  by = "EncounterID"),
+            by = "EncounterID"),
+      by = "EncounterID")
+```
+
