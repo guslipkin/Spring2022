@@ -1,5 +1,7 @@
 # Homework 1
 
+> Gus Lipkin
+
 ## Chapter 1
 
 1. What are the six (6) principles of finance?
