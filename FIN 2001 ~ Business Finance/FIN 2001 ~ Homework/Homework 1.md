@@ -31,22 +31,11 @@
 
 2. What are the four (4) main types of financial markets?
 
-   1. Policy makers: President, Congress & U.S. Treasury Federal Reserve Board
-
-      Role: Pass laws & set fiscal & monetary policies
-
-   2. Monetary System: Federal Reserve Central Bank Commercial Banking System
-
-      Role: Create & transfer money
-
-   3. Financial Institutions: Depository Institutions, Contractual Savings organizations, Securities Firms, and Finance Firms
-
-      Role: Accumulate & lend/invest savings
-
-   4. Financial Markets: Securities Markets, Mortgage Markets, Derivatives Markets, and Currency Exchange Markets
-
-      Role: Market & facilitate transfer of financial assets
-
+   1. Securities Markets
+   2. Mortgage Markets
+   3. Derivatives Markets
+   4. Currency Exchange Markets
+   
 3. Financial markets may be categorized as: (1) debt securities markets, (2) equity securities markets, (3) derivative securities markets, and (4) foreign exchange markets. Indicate in which of these markets the following securities trade:
 
    > - Mortgages
