@@ -1,0 +1,9 @@
+---
+title: "Assignment 2"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+# Problem 8
