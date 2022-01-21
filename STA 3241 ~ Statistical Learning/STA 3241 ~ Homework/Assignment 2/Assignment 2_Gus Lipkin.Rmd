@@ -7,3 +7,167 @@ output:
 ---
 
 # Problem 8
+> This question involves the use of simple linear regression on the Auto data set.
+
+```{r}
+library(data.table)
+library(tidyverse)
+auto <- fread("../Assignment 1/Auto.csv")
+auto$horsepower <- as.numeric(auto$horsepower)
+```
+
+
+## 8a
+> Use the `lm()` function to perform a simple linear regression with `mpg` as the response and `horsepower` as the predictor. Use the `summary()` function to print the results. Comment on the output. For example:
+
+```{r}
+lm <- lm(mpg ~ horsepower, data = auto)
+lm
+summary(lm)
+```
+
+
+### 8a i
+> Is there a relationship between the predictor and the re- sponse?
+
+Yes. After horsepower is converted to numeric, there is a relationship between `horsepower` and `mpg`.
+
+### 8a ii
+> How strong is the relationship between the predictor and the response?
+
+Very strong. The p-value is tiny.
+
+### 8a iii
+> Is the relationship between the predictor and the response positive or negative?
+
+Negative. As `horsepower` increases, `mpg` decreases.
+
+### 8a iv
+> What is the predicted `mpg` associated with a `horsepower` of 98? What are the associated 95% confidence and prediction intervals?
+
+```{r}
+predict(lm, auto)[98]
+# confidence interval
+predict(lm, auto, interval = "confidence")[98,]
+# prediction interval
+predict(lm, auto, interval = "prediction")[98,]
+```
+
+
+## 8b
+> Plot the response and the predictor. Use the `abline()` function to display the least squares regression line.
+
+```{r}
+plot(auto$horsepower, auto$mpg)
+abline(lm)
+```
+
+
+## 8c
+> Use the `plot()` function to produce diagnostic plots of the least squares regression fit. Comment on any problems you see with the fit.
+
+```{r}
+plot(lm)
+```
+
+From the textbook, Figure 3.9: "*Plots of residuals versus predicted (or fitted) values for the Auto data set. In each plot, the red line is a smooth fit to the residuals, intended to make it easier to identify a trend. Left: A linear regression of `mpg` on `horsepower`. A strong pattern in the residuals indicates non-linearity in the data. Right: A linear regression of `mpg` on `horsepower` and `horsepower`. There is little pattern in the residuals.*"
+
+# 9
+> This question involves the use of multiple linear regression on the `Auto` data set.
+
+## 9a
+> Produce a scatterplot matrix which includes all of the variables in the data set.
+
+```{r}
+auto$name <- as.factor(auto$name)
+pairs(auto)
+```
+
+## 9b
+> Compute the matrix of correlations between the variables using the function `cor()`. You will need to exclude the `name` variable, which is qualitative.
+
+```{r}
+cor(auto[, -9])
+```
+
+## 9c
+> Use the `lm()` function to perform a multiple linear regression with `mpg` as the response and all other variables except `name` as the predictors. Use the `summary()` function to print the results. Comment on the output. For instance:
+
+```{r}
+lm <- lm(mpg ~ cylinders + displacement + horsepower + weight + acceleration + year + origin, auto)
+lm
+summary(lm)
+```
+
+
+### 9c i
+> Is there a relationship between the predictors and the re- sponse?
+
+There is a relationship between `mpg` and `displacement`, `weight`, `year`, and `origin`.
+
+### 9c ii
+> Which predictors appear to have a statistically significant relationship to the response?
+
+There is a relationship between `mpg` and `displacement`, `weight`, `year`, and `origin`.
+
+### 9c iii
+> What does the coefficient for the `year` variable suggest?
+
+This suggests that the `mpg` increases alongside the `year`. (Cars become more efficient over time).
+
+## 9d
+> Use the `plot()` function to produce diagnostic plots of the linear regression fit. Comment on any problems you see with the fit. Do the residual plots suggest any unusually large outliers? Does the leverage plot identify any observations with unusually high leverage?
+
+```{r}
+plot(lm)
+```
+
+There are a decent amount of outliers among the dataset. There are a few observations with strangely high leverage.
+
+## 9e
+> Use the `*` and `:` symbols to fit linear regression models with interaction effects. Do any interactions appear to be statistically significant?
+
+```{r}
+summary(lm(mpg ~ cylinders * displacement + horsepower:weight, auto))
+```
+
+I guessed and it turns out that my suspicions were correct. `cylinders:diplacement` and `horsepower:weight` were significant.
+
+## 9f
+> Try a few different transformations of the variables, such as $log(X)$, $\sqrt{X}$, $X^2$. Comment on your findings.
+
+```{r}
+summary(lm(log(mpg) ~ cylinders^2, auto))
+summary(lm(log(mpg) ~ cylinders^2 + log(horsepower)^2:sqrt(weight), auto))
+```
+
+I'm a little surprised that the regressions didn't break as easily as I thought they would with some basic transformations.
+
+# 10
+> This question should be answered using the `Carseats` data set.
+
+```{r}
+carseats <- ISLR2::Carseats
+```
+
+
+## 10a
+> Fit a multiple regression model to predict `Sales` using `Price`, `Urban`, and `US.`
+
+```{r}
+lm <- lm(Sales ~ Price + Urban + US, carseats)
+lm
+summary(lm)
+```
+
+## 10b
+> Provide an interpretation of each coefficient in the model. Be careful—some of the variables in the model are qualitative!
+
+As `Price` increases by 1, `Sales` decrease by $.054459$
+When `Urban` is `Yes`, `Sales` decrease by $.021916$ (but this isn't significant)
+When `US` is `Yes`, `Sales` increases by $1.021916$
+
+## 10c
+> Write out the model in equation form, being careful to handle the qualitative variables properly.
+
+$\textrm{Sales}=$
