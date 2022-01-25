@@ -6,25 +6,17 @@
 
 1. Credit unions are **made up of individuals who possess common bonds of association**.
 
-   - B
-
 2. Financial institutions include all of the following except **pawn shops**.
-
-   - D
 
 3. Which of the following institutions is not part of the modern banking system? 
 
-   - C – **Mutual Funds**
+   - **Mutual Funds**
 
 4. An open-end investment company that can issue an unlimited number of its shares to 
    investors and use the pooled proceeds to purchase corporate and government securities 
    is called a(n) **mutual fund**.
 
-   - A
-
 5. Commercial banks obtain the bulk of their loanable funds from **depositors**.
-
-   - A
 
 6. What is?
 
@@ -75,52 +67,30 @@
 9. Under the Federal Reserve Act of 1913, the number of Federal Reserve districts established 
    is **12**.
 
-   - C
-
 10. The seven-member board of the Federal Reserve that sets monetary policy is called **the Federal Reserve Board of Governors**.
-
-    - B
 
 11. The chairman of the Federal Reserve System **is appointed by the President of the United States**.
 
-    - D
-
 12. The primary function of the Federal Reserve System is to **regulate the growth of the money supply**.
-
-    - B
 
 13. The Federal Reserve Banks are owned by **member banks of the Federal Reserve System**.
 
 14. The Federal Open Market Committee **implements the most powerful and flexible monetary policy tool of the Fed **.
 
-    - B
-
-15. Open market operations **are used infrequently **.
-
-    - A
+15. Open market operations **are used by the Fed to alter bank reserves**.
 
 16. The effect of an increase of required reserves by the Fed is **a decrease in loanable funds of depository institutions**.
 
-    - A
-
 17. During the past several years **the discount rate has been lower than the prime rate**.
-
-    - A
 
 18. A basic policy instrument that the Fed uses to execute monetary policy is which of the 
     following?
 
-    - B – **changing the lending/discount rate**
+    - **changing the lending/discount rate**
 
 19. The Fed controls the **money** supply.
 
-    - C
-
 20. The Fed discount rate is **the rate a bank must pay to borrow from the Fed**.
-
-    - C
 
 21. The interest rate that a bank must pay to borrow from its regional federal reserve bank is 
     called **the Federal Discount Rate**.
-
-    - C
