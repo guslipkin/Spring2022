@@ -1,0 +1,166 @@
+---
+title: "Logistic Regression"
+
+output:  html_notebook
+---
+
+In 1846 the Donner and Reed families left Springfield, Illinois, for California by covered wagon. In July, the Donner Party, as it became known, reached Fort Bridger, Wyoming. There its leaders decided to attempt a new and untested route to the Sacramento Valley. Having reached its full size of 87 people and 20 wagons, the party was delayed by a difficult crossing of the Wasatch Range and again in the crossing of the desert west of the Great Salt Lake. The group became stranded in the eastern Sierra Nevada mountains when the region was hit by heavy snows in late October. By the time the last survivor was rescued on April 21 1847, 40 of the 87 members had died from famine and exposure to extreme cold.
+
+We will use this dataset to determine the probability of survival. Please download the donner.csv dataset from canvas for this exercise. 
+
+
+```{r, message=FALSE, warning=FALSE}
+#load the tidyverse package
+library(tidyverse)
+library(data.table)
+```
+
+- Read the Donner party data set:
+
+```{r, message=FALSE}
+dt <- fread("Data/donner.csv")
+```
+
+Recode the response variable to be `0` for `Died` and `1` for `Survived`
+
+```{r}
+# change `Status` to 0 or 1
+dt$Survived <- ifelse(dt$Status == "Survived", 1, 0)
+```
+
+Recode the `Sex` variable as a _factor_ variable:
+
+```{r}
+# code the variable as a factor
+dt$Sex <- as.factor(dt$Sex)
+```
+
+- Data visualization and summary
+
+```{r}
+# create a box plot between survival status and age
+dt %>%
+  ggplot() +
+  geom_boxplot(aes(x = Status, y = Age))
+```
+
+```{r}
+# summary
+summary(dt)
+table(dt$Status, dt$Sex)
+```
+
+It seems clear that both age and gender have an effect on someone's survival, how do we come up with a model that will let us explore this relationship?
+
+One way to think about the problem - we can treat `Survived` and `Died` as successes and failures arising from a binomial distribution where the probability of a success is given by a transformation of a linear model of the predictors.
+
+
+```{r}
+# basic logistic regression model
+lm <- glm(Survived ~ Age, data = dt, family = "binomial")
+lm
+summary(lm)
+```
+
+**Model**:
+
+$$\log\left(\frac{p}{1-p}\right) = 1.8185-0.0665\times \text{Age}$$
+
+Odds / Probability of survival for a newborn (`Age=0`):
+
+$$
+\begin{aligned}
+\log\left(\frac{p}{1-p}\right) &= 1.8185-0.0665\times \bf{0} \\
+\frac{p}{1-p} &= \exp(1.8185) = 6.16 \\
+p &= 6.16/7.16 = 0.86 
+\end{aligned}
+$$
+
+
+```{r}
+# prediction for a newborn
+oddsAgeZero <- exp(predict(lm, list(Age=0)))
+```
+
+
+```{r}
+# probability
+oddsAgeZero / (1 + oddsAgeZero)
+```
+
+Odds / Probability of survival for a 50 year old:
+
+$$
+\begin{aligned}
+\log\left(\frac{p}{1-p}\right) &= 1.8185-0.0665\times \bf{50}\\
+\frac{p}{1-p} &= \exp(-1.5065) = 0.222 \\
+p &= 0.222/1.222 =  0.181
+\end{aligned}
+$$
+
+
+```{r}
+oddsAge <- exp(predict(lm, list(Age=50)))
+oddsAge / (1 + oddsAge)
+```
+
+
+```{r}
+# visualization
+ggplot(dt, aes(x = Age, y = Survived)) + 
+  geom_point() + 
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE) + 
+  facet_wrap(~Sex)
+```
+
+Visualization for the full model (without separation by gender)
+```{r}
+# visualization
+ggplot(dt, aes(x = Age, y = Survived)) + 
+  geom_point() + 
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE, fullrange = TRUE) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  xlim(0, 80) + 
+  geom_point(aes(x = 50, y = 0.181), color = "red") + 
+  geom_point(aes(x = 0,  y = 0.860), color = "red") + 
+  geom_point(aes(x = 25, y = 0.539), color = "red")
+```
+
+Total counts per `Sex`: 
+
+
+```{r}
+# count
+dt[, .N, by = Sex]
+```
+
+```{r}
+# Multiple Logistic Regression Model
+lm <- glm(Survived ~ Age + Sex, data = dt, family = "binomial")
+lm
+summary(lm)
+```
+
+The coefficient estimate for SexFemale (1.597) indicates the log odds ratio between the given level (Female) and the reference level (Male). We can plug in the gender variable to arrive at two model equations for males and females respectively. 
+
+$$
+General Model:\\log\left(\frac{p}{1-p}\right) = 1.63312-0.0782\times \text{Age}+1.59729\times \text{Sex}\\
+Female Model:\\log\left(\frac{p}{1-p}\right) = 1.63312-0.0782\times \text{Age}+1.59729\times \text{1}\\
+= 3.23041-0.0782\times \text{Age}\\
+Male Model:\\log\left(\frac{p}{1-p}\right) = 1.63312-0.0782\times \text{Age}+1.59729\times \text{0}\\
+= 1.63312-0.0782\times \text{Age}\\
+$$
+Prediction: Probability of Survival for 50 year old man
+
+```{r}
+oddsAge <- exp(predict(lm, list(Age=50, Sex="Male")))
+oddsAge / (1 + oddsAge)
+```
+
+Probability of Survival for 50 year old female
+
+```{r}
+oddsAge <- exp(predict(lm, list(Age=50, Sex="Female")))
+oddsAge / (1 + oddsAge)
+```
+

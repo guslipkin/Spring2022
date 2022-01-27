@@ -2,11 +2,14 @@
 title: "Assignment 2"
 author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
 output:
-  html_notebook: default
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
   pdf_document: default
 ---
 
-# Problem 8
+# 8
 > This question involves the use of simple linear regression on the Auto data set.
 
 ```{r}
@@ -170,4 +173,161 @@ When `US` is `Yes`, `Sales` increases by $1.021916$
 ## 10c
 > Write out the model in equation form, being careful to handle the qualitative variables properly.
 
-$\textrm{Sales}=$
+$\textrm{Sales}=13.04-.05\textrm{Price}-(.02\textrm{Urban}_{\textrm{Yes}})+(1.20\textrm{US}_{\textrm{Yes}})$
+
+## 10d
+> For which of the predictors can you reject the null hypothesis $H0:β_j=0$ ?
+
+`Price` and `USYes` are significant enough with a p-value less than 0.05 so we are 95% confident that they are significant.
+
+## 10e
+> On the basis of your response to the previous question, fit a smaller model that only uses the predictors for which there is evidence of association with the outcome.
+
+```{r}
+lm <- lm(Sales ~ Price + US, carseats)
+lm
+summary(lm)
+```
+
+## 10f
+> How well do the models in (a) and (e) fit the data?
+
+The model in (e) fits much better than the one in (a) because it only has significant variables. 
+
+## 10g
+> Using the model from (e), obtain $95\%$ confidence intervals for the coefficient(s).
+
+```{r}
+confint(lm)
+```
+
+## 10h
+> Is there evidence of outliers or high leverage observations in the model from (e)?
+
+```{r}
+par(mfrow = c(2,2))
+plot(lm)
+```
+
+There are a few points that look to be outside the normal range. Points 51, 69, and 377 seem to be outliers and points 26, 50, and 368 seem to have high leverage. I'm not worried about them because there are only three in a good-sized dataset. 
+
+# 4
+> From the data available at [http://www.stat.ufl.edu/~winner/datasets.html](http://www.stat.ufl.edu/~winner/datasets.html), obtain the data on “Fibre Diameters and Breaking Strenghs for Nextel 610 Fibres.” (please note that there is a typo on the website. It should be Strength and not Strengh) According to the description available there, the expectation is that the log of breaking strength of the fibre should be negatively and linearly related to diameter. (Note log here means natural log if not specified.)
+
+```{r}
+dt <- fread("fibre.csv")
+colnames(dt) <- c("stren", "diam")
+head(dt)
+```
+
+
+## 4a
+> Produce a scatter plot of breaking strength against diameter.
+
+```{r}
+plot(dt$diam, dt$stren)
+```
+
+## 4b
+> Produce a scatter plot of the log of breaking strength against diameter. 
+
+```{r}
+dt$logStren <- log(dt$stren)
+plot(dt$logStren, dt$diam)
+```
+
+## 4c 
+> Produce a scatter plot of the log of breaking strength against the log of diameter.
+
+```{r}
+dt$logDiam <- log(dt$diam)
+plot(dt$logStren, dt$logDiam)
+```
+
+## 4d 
+> Regress breaking strength on diameter. 
+
+```{r}
+lm <- lm(stren ~ diam, data = dt)
+lm
+summary(lm)
+```
+
+## 4e
+> Regress the log of breaking strength on diameter. 
+
+```{r}
+lm <- lm(logStren ~ diam, data = dt)
+lm
+summary(lm)
+```
+
+
+## 4f 
+> Regress the log of breaking strength on the log of diameter. 
+
+```{r}
+lm <- lm(logStren ~ logDiam, data = dt)
+lm
+summary(lm)
+```
+
+# 5
+> From the data available at [http://www.stat.ufl.edu/~winner/datasets.html](http://www.stat.ufl.edu/~winner/datasets.html), obtain the data on “Variables associated with Permeability and Porosity of Rocks”
+
+```{r}
+dt <- fread("rocks.csv")
+colnames(dt) <- c("type", "density", "porosity", "logPermeability", "residue", "carbonate", "aGrain", "aSD", "bGrain", "bSD", "calcite", "dolomite")
+head(dt)
+```
+
+
+## 5a
+> Fit a multiple regression model to predict porosity. Please provide a clean model with only significant variables. Interpret your model results and diagnostics.
+
+```{r}
+lm <- lm(porosity ~ ., data = dt)
+lmSumm <- summary(lm)
+coefs <- coef(lmSumm)[-1,4] <= .05
+
+# This prunes the regression until only significant variables remain
+while(length(coefs) != sum(coefs)) {
+  form <- paste("porosity ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
+  form <- substr(form, 1, nchar(form) - 2)
+  form
+  lm <- lm(formula = form, data = dt)
+  lmSumm <- summary(lm)
+  coefs <- coef(lmSumm)[-1,4] <= .05
+}
+lm
+lmSumm
+par(mfrow = c(2,2))
+plot(lm)
+```
+
+This is a little silly, but the only significant variable is `logPermeability` and the intercept is even more significant than that is. The $R^2$ value is far from great. I think that because the dataset is rather small, there are more issues that are more prevalent. This is seen in the diagnostic charts where the values and lines are all over the place. Points 5, 8, 10, and 20 seem to be the biggest problems, but that's 13% of the total dataset.
+
+## 5b
+> Fit a multiple regression model to predict log(permeability). Please provide a clean model with only significant variables. Interpret your model results and diagnostics.  
+
+```{r}
+lm <- lm(logPermeability ~ ., data = dt)
+lmSumm <- summary(lm)
+coefs <- coef(lmSumm)[-1,4] <= .05
+
+# This prunes the regression until only significant variables remain
+while(length(coefs) != sum(coefs)) {
+  form <- paste("logPermeability ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
+  form <- substr(form, 1, nchar(form) - 2)
+  form
+  lm <- lm(formula = form, data = dt)
+  lmSumm <- summary(lm)
+  coefs <- coef(lmSumm)[-1,4] <= .05
+}
+lm
+lmSumm
+par(mfrow = c(2,2))
+plot(lm)
+```
+
+This regression is much better, but still not particularly great. The $R^2$ is much better and the Intercept is no longer significant. `Porosity` is significant which is expected based on the results of 5a. There are again a few outliers and leverage points which skew the results a bit.

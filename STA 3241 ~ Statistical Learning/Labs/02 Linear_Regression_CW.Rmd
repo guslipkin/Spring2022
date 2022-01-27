@@ -151,18 +151,24 @@ Estimate a regression model using all the predictors
 
 ```{r}
 attach(Boston)
-
+lm_all <- lm(medv ~ ., data = Boston)
+lm_all
+summary(lm_all)
 ```
 
-Perform regression using all variables but one. In the above, we see that indus and age have a high $p$-value and wish to run a model without one of these variables. 
+Perform regression using all variables but one. In the above, we see that `indus` and age have a high $p$-value and wish to run a model without one of these variables. 
 
 ```{r}
-
+lm_all_1 <- lm(medv ~ . -indus, data = Boston)
+lm_all_1
+summary(lm_all_1)
 ```
 Alternatively, the `update()` function can be used.
 
 ```{r}
-
+lm_all_2 <- update(lm_all_1, ~. -age)
+lm_all_2
+summary(lm_all_2)
 ```
 
 ## VIF
@@ -176,7 +182,8 @@ inflation factors.   Most VIF's are
 low to moderate for this data. The `car` package is not part of the base `R` installation so it must be downloaded the first time you use it via the `install.packages()` function in `R`.
 
 ```{r chunk16}
-
+library(car)
+vif(lm_all_2)
 ```
 ## Interaction Terms
 
@@ -185,13 +192,14 @@ The syntax `lstat * age` simultaneously includes `lstat`, `age`, and the interac
   %We can also pass in transformed versions of the predictors.
 
 ```{r chunk19}
-
+summary(lm(medv ~ crim + lstat:age, data = Boston))
+summary(lm(medv ~ crim + lstat*age, data = Boston))
 ```
 
 ## Interaction on Sales Data
 
 ```{r}
-
+sales_multlm_2 <- lm(sales ~ TV*radio + newspaper, data = ad)
 ```
 
 ```{r}
