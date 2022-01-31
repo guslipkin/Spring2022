@@ -1,0 +1,249 @@
+---
+title: "Assignment 3"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output:
+  html_notebook:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+  pdf_document: default
+---
+
+# Problem 1 (Q6)
+> Suppose we collect data for a group of students in a statistics class with variables $X_1$ = hours studied, $X_2$ = undergrad GPA, and $Y$ = receive an A. We fit a logistic regression and produce estimated coefficient, $βˆ0 = −6$, $βˆ1 = 0.05$, $βˆ2 = 1$.
+
+## 6a
+> Estimate the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class.
+
+$$
+Y=\hat\beta_0+\hat\beta_1X_1+\hat\beta_2X_2\\
+Y=-6+(.05*40)+(1*3.5)\\
+Y=-6+2+3.5\\
+Y=-.5\\
+\textrm{Convert to probability...}\\
+=\frac{e^{-.5}}{1+e^{-.5}}\\
+=\frac{.6065}{1.6065}\\
+=.3375
+$$
+
+## 6b
+> How many hours would the student in part (a) need to study to have a $50\%$ chance of getting an A in the class?
+
+$$
+.5=\frac{e^{-6+(.05*X_1)+(1*3.5)}}{1+e^{-6+(.05*X_1)+(1*3.5)}}\\
+.5+.5e^{-6+(.05*X_1)+(1*3.5)}=e^{-6+(.05*X_1)+(1*3.5)}\\
+.5=-.5e^{-6+(.05*X_1)+(1*3.5)}\\
+1=e^{-6+(.05*X_1)+(1*3.5)}\\
+ln(1)=ln(e^{-6+(.05*X_1)+(1*3.5)})\\
+0=-6+(.05*X_1)+(1*3.5)\\
+6=.05X_1+3.5\\
+2.5=.05X_1\\
+X_1=50\textrm{ hours}
+$$
+
+(This is unhealthy)
+
+# Problem 2 (Q9)
+> This problem has to do with *odds*.
+
+## 9a
+> On average, what fraction of people with an odds of 0.37 of
+defaulting on their credit card payment will in fact default?
+
+$$
+=\frac{.37}{1+.37}\\
+=\frac{.37}{1.37}\\
+=.2700\\
+$$
+
+# 9b
+> Suppose that an individual has a $16\%$ chance of defaulting on her credit card payment. What are the odds that she will de- fault?
+
+$$
+.16=\frac{x}{1+x}\\
+.16+.16x=x\\
+.16=.84x\\
+x=.1905
+$$
+
+# Problem 3 (Q13)
+> This question should be answered using the `Weekly` data set, which is part of the `ISLR2` package. This data is similar in nature to the `Smarket` data from this chapter’s lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+```{r}
+library(tidyverse)
+library(data.table)
+
+dt <- data.table(ISLR2::Weekly)
+head(dt)
+```
+
+
+## 13a
+> Produce some numerical and graphical summaries of the `Weekly` data. Do there appear to be any patterns?
+
+```{r}
+summary(dt)
+pairs(dt[, .(Year, Volume, Today, Direction)])
+pairs(dt[, .(Volume, Lag1, Lag2, Lag3, Lag4, Lag5)])
+```
+
+Volume goes up. Daily change is generally small. Lags look consistent to each other.
+
+## 13b
+> Use the full data set to perform a logistic regression with `Direction` as the response and the five lag variables plus `Volume` as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+
+```{r}
+dt$Direction <- ifelse(dt$Direction == "Up", 1, 0)
+lm <- glm(Direction ~ . - Year - Today, data = dt, family = "binomial")
+lm
+summary(lm)
+```
+
+Lag two appears the most statistically significant.
+
+## 13c
+> Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+```{r}
+pred <- round(predict(lm, dt, type = "response"))
+table(pred, dt$Direction)
+mean(pred == dt$Direction)
+```
+
+## 13d
+> Now fit the logistic regression model using a training data period from 1990 to 2008, with `Lag2` as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+train <- dt[Year %in% range(1990, 2008)]
+test <- dt[!(Year %in% range(1990, 2008))]
+lm <- glm(Direction ~ Lag2, data = train, family = "binomial")
+lm
+summary(lm)
+
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$Direction)
+mean(pred == test$Direction)
+```
+
+14 a-c,f
+# Problem 4 (Q14)
+> In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the `Auto` data set.
+
+```{r}
+dt <- data.table(ISLR2::Auto)
+```
+
+## 14a
+> Create a binary variable, `mpg01`, that contains a 1 if `mpg` contains a value above its median, and a 0 if `mpg` contains a value below its median. You can compute the median using the `median()` function. Note you may find it helpful to use the `data.frame()` function to create a single data set containing both `mpg01` and the other `Auto` variables.
+
+```{r}
+dt$mpg01 <- ifelse(dt$mpg > median(dt$mpg), 1, 0)
+```
+
+## 14b
+> Explore the data graphically in order to investigate the association between `mpg01` and the other features. Which of the other features seem most likely to be useful in predicting `mpg01`? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+```{r warning=FALSE}
+GGally::ggpairs(dt[, !c("name", "mpg")], aes(color = as.factor(mpg01)))
+```
+
+I've definitely done this before already but whatever. There is a clear difference between cars that are above and below the median. The biggest differences are in the `displacement`, `horespower`, and `weight` categories.
+
+## 14c
+> Split the data into a training set and a test set.
+
+```{r}
+set.seed(2022)
+rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE)
+
+train <- dt[rowPicker]
+test <- dt[!rowPicker]
+```
+
+## 14f
+> Perform logistic regression on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
+
+```{r}
+train <- train[, !c("mpg", "name")]
+lm <- glm(mpg01 ~ ., data = train, family = "binomial")
+lmSumm <- summary(lm)
+coefs <- coef(lmSumm)[-1,4] <= .05
+
+# This prunes the regression until only significant variables remain
+while(length(coefs) != sum(coefs)) {
+  form <- paste("mpg01 ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
+  form <- substr(form, 1, nchar(form) - 2)
+  form
+  lm <- glm(formula = form, data = train, family = "binomial")
+  lmSumm <- summary(lm)
+  coefs <- coef(lmSumm)[-1,4] <= .05
+}
+lmSumm
+
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$mpg01)
+mean(pred == test$mpg01)
+```
+
+The test error is $.8877$.
+
+# Problem 5
+> Use the `Boston` data set to fit a logistic regression model to predict whether a given census tract has a crime rate above or below the median using various predictors. You will have to create the response variable yourself using the variables from the data set. Describe your findings. 
+
+```{r}
+dt <- data.table(ISLR2::Boston)
+dt$danger <- ifelse(dt$crim > median(dt$crim), 1, 0)
+head(dt)
+```
+
+```{r}
+rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE)
+
+train <- dt[rowPicker, !c("crim")]
+test <- dt[!rowPicker]
+
+# train <- train[, !c("mpg", "name")]
+lm <- glm(danger ~ ., data = train, family = "binomial")
+lmSumm <- summary(lm)
+coefs <- coef(lmSumm)[-1,4] <= .05
+
+# This prunes the regression until only significant variables remain
+while(length(coefs) != sum(coefs)) {
+  form <- paste("danger ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
+  form <- substr(form, 1, nchar(form) - 2)
+  form
+  lm <- glm(formula = form, data = train, family = "binomial")
+  lmSumm <- summary(lm)
+  coefs <- coef(lmSumm)[-1,4] <= .05
+}
+lmSumm
+
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$danger)
+mean(pred == test$danger)
+```
+
+# Problem 6
+> You are given 151 observations of a travel survey collected in State College Pennsylvania (please see Problem6_Assignment3.xlsx). All the households in the sample are making the morning commute to work. They are all departing from the same origin (a large residential complex in the suburbs) and going to work in the Central Business District. They have the choice of two alternate routes: 1) a two-lane rural road (speed limit = 35mph, 1 lane each direction) and 2) a limited access four-lane freeway (speed limit = 55mph, 2 lanes each direction). Please estimate a model of route choice (i.e., the likelihood of an individual traveler taking one of the two routes) including all the appropriate predictors. Describe your findings i.e., include the coefficient estimates and odds ratios and justify the sign of your variables. The dataset includes the following variables: 
+
+```{r}
+dt <- fread("Problem6_Assignment3.csv")
+head(dt)
+```
+
+```{r}
+glmulti::glmulti(route ~ ., 
+                 data = dt,
+                 level = 2,
+                 marginality = FALSE,
+                 minsize = 1, maxsize = 5,
+                 minK = -1, maxK = -1,
+                 method = "d",
+                 fitfunction = "binomial",
+                 confsetsize = 10,
+                 plotty = TRUE,
+                 report = TRUE,
+                 resumefile = "test",
+                 includeobjects = TRUE)
+```
+
