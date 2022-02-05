@@ -1,0 +1,264 @@
+---
+title: "Discriminant Analysis_CW"
+output: html_notebook
+---
+
+
+```{r}
+library(MASS) # This package contains the LDA function
+library(tidyverse)
+library(ROCR)# to plot the ROC curve
+library(caret) # for Discriminant Analysis
+library(ISLR2)
+set.seed(1234) # For reproducibility
+```
+
+More information on the caret package can be found at this link [Information on Caret Package](https://topepo.github.io/caret/index.html)
+
+We will use the 'Default' dataset to predict whether an individual will default credit card payments based on balance, student status and annual income. 
+
+Dependent/Target variable: default
+Independent/predictor variables: balance, student, income
+
+## Data Preprocessing
+
+
+```{r}
+#Load the data
+default_data <- Default
+head(default_data)
+```
+
+
+```{r}
+#Summary Statistics
+summary(default_data)
+```
+
+Plot the data
+
+```{r}
+boxplot(balance ~ default, data = default_data, main = "Boxplot of Default Status and Card Balance", xlab = "Default Status", ylab = "Card Balance", col = c("maroon", "gold"))
+
+```
+
+```{r}
+boxplot(income ~ default, data = default_data, main = "Boxplot of Default Status and Income", xlab = "Default Status", ylab = "Card Balance", col = c("maroon", "gold"))
+```
+
+
+```{r}
+plot(income ~ balance, data = default_data, main = "Balance vs Income", xlab = "Credit Card Balance", ylab = "Income")
+```
+
+Training and Test Datasets
+
+Split the data into training and testing datasets. Training observations are used to build the model. We want the model to perform well not only on the training observations but also on new data (which we call the test data). If separate training and test datasets are not available, we will hold out a portion of the data (e.g. 20 or 25% of the available data) for testing the model. 
+We will use the createDataPartition() tool from the caret package to split the data
+
+```{r}
+#Create a training set using 80% of the data 
+
+```
+
+## Logistic Regression
+
+```{r}
+# Logistic Regression with all variables
+```
+
+```{r}
+# Logistic Regression without the insgnificant variable
+```
+
+
+
+```{r}
+#We obtain predicted probabilities for the test set
+
+```
+
+
+
+```{r}
+#Create a confusion matrix
+
+```
+
+```{r}
+#Misclassification Rate
+(41+9)/1999
+```
+
+## Discriminant Analysis without the CARET Package
+
+
+### Linear Discriminant Analysis
+```{r}
+
+```
+The LDA output indicates that our prior probabilities are $\pi_1(x) = 0.9667$ and 
+$\pi_2(x) = 0.0333$; in other words, 96.67% of the training observations are customers who did not default and about 3% represent those that defaulted. 
+
+It also provides the group means; these are the average of each predictor within each class, and are used by LDA as estimates of $\mu_k$
+
+These suggest that customers that tend to default have, on average, a credit card balance of $1,740 and are more likely to be students then non-defaulters (29% of non-defaulters are students whereas 38% of defaulters are).
+
+The coefficients of linear discriminants output provides the _linear combination_ of `balance` and `student=Yes` that are used to form the LDA decision rule: 
+
+If $0.0022 \times \text{balance} - 0.224 \times \text{student}$ is large, then the LDA classifier will predict that the customer will default, and if it is small, then the LDA classifier will predict the customer will not default.
+
+Plot of Linear Discriminants
+
+```{r}
+
+```
+Notice that when $0.0022 \times \text{balance} - 0.224 \times \text{student} < 0$ the probability increases that the customer will not default and when $0.0022 \times \text{balance} - 0.224 \times \text{student} > 0$ the probability increases that the customer will default.
+
+Prediction with LDA
+
+```{r}
+
+```
+
+We see that predict returns a list with three elements. The first element, `class`, contains LDA's predictions about the customer defaulting.  The second element, `posterior`, is a matrix that contains the posterior probability that the corresponding observations will or will not default.  however we can make adjustments to our posterior probability thresholds. Finally, `x` contains the _linear discriminant values_, described earlier.
+
+```{r}
+#Obtain the confusion matrix
+
+```
+
+```{r}
+#Misclassification Rate
+
+```
+
+ROC Curves
+```{r}
+prediction(test_pred_lda$posterior[ , 2], test_data$default) %>%
+  performance(measure = "tpr", x.measure = "fpr") %>%
+  plot()
+```
+
+
+Checking AUC
+
+```{r}
+prediction(test_pred_lda$posterior[ , 2], test_data$default) %>%
+  performance(measure = "auc") %>%
+  .@y.values
+```
+
+
+
+
+```{r}
+#Changing thresholds for LDA
+```
+
+ 
+
+```{r}
+#Create new confusion matrix
+t(table(test_data$default, test_pred_lda_new))
+```
+
+
+
+### Quadratic Discriminant Analysis
+
+```{r}
+
+```
+
+The output contains the group means. But it does not contain the coefficients of the linear discriminants, because the QDA classifier involves a quadratic, rather than a linear, function of the predictors.
+
+Prediction with QDA
+
+```{r}
+
+
+```
+
+```{r}
+#obtain the confusion matrix
+
+
+```
+
+```{r}
+#misclassification rate
+(6+48)/1999
+```
+
+
+## Linear Discriminant Analysis using the Caret Package
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+ROC Curves
+
+```{r}
+lda_model_pred_roc <- predict(lda_model, test_data, type = "prob") # predicted data for ROC Curve
+```
+
+
+```{r}
+ldaROC<- prediction(lda_model_pred_roc[,2], test_data$default)
+ldaRF<- performance(ldaROC, "tpr", "fpr")
+plot(ldaRF, main = "ROC Curve for LDA Model")
+```
+
+
+## Quadratic Discriminant Analysis using the Caret Package
+
+```{r}
+
+```
+
+
+```{r}
+
+
+```
+
+```{r}
+
+```
+
+ROC Curves
+
+```{r}
+qdaROC<- prediction(qda_model_pred_roc[,2], test_data$default)
+qdaRF<- performance(qdaROC, "tpr", "fpr")
+plot(qdaRF, main = "ROC Curve for QDA Model")
+```
+
+
+
+```{r}
+table(qda_model_pred, test_data$default)
+```
+
+```{r}
+qda_pred_acc <- round(mean(qda_model_pred==test_data$default)*100,2)
+qda_pred_acc
+```
+
+
+

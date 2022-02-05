@@ -56,7 +56,7 @@ $$
 =.2700\\
 $$
 
-# 9b
+## 9b
 > Suppose that an individual has a $16\%$ chance of defaulting on her credit card payment. What are the odds that she will de- fault?
 
 $$
@@ -125,7 +125,6 @@ table(pred, test$Direction)
 mean(pred == test$Direction)
 ```
 
-14 a-c,f
 # Problem 4 (Q14)
 > In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the `Auto` data set.
 
@@ -227,23 +226,52 @@ mean(pred == test$danger)
 > You are given 151 observations of a travel survey collected in State College Pennsylvania (please see Problem6_Assignment3.xlsx). All the households in the sample are making the morning commute to work. They are all departing from the same origin (a large residential complex in the suburbs) and going to work in the Central Business District. They have the choice of two alternate routes: 1) a two-lane rural road (speed limit = 35mph, 1 lane each direction) and 2) a limited access four-lane freeway (speed limit = 55mph, 2 lanes each direction). Please estimate a model of route choice (i.e., the likelihood of an individual traveler taking one of the two routes) including all the appropriate predictors. Describe your findings i.e., include the coefficient estimates and odds ratios and justify the sign of your variables. The dataset includes the following variables: 
 
 ```{r}
+library(data.table)
+library(tidyverse)
 dt <- fread("Problem6_Assignment3.csv")
 head(dt)
+dt$route <- ifelse(dt$route == 1, 1, 0)
+```
+
+```{r warning=FALSE}
+# if you don't have `dewey` installed...
+# install.packages("devtools")
+# devtools::install_github("guslipkin/dewey")
+regs <- dewey::regsearch(
+    fDT = dt[1:75],
+    dependent = "route",
+    independent = colnames(dt[, !c("route")]),
+    minvar = 1,
+    maxvar = 13,
+    family = "binomial",
+    topN = 3,
+    interactions = FALSE,
+    multi = TRUE
+  )
+regs
 ```
 
 ```{r}
-glmulti::glmulti(route ~ ., 
-                 data = dt,
-                 level = 2,
-                 marginality = FALSE,
-                 minsize = 1, maxsize = 5,
-                 minK = -1, maxK = -1,
-                 method = "d",
-                 fitfunction = "binomial",
-                 confsetsize = 10,
-                 plotty = TRUE,
-                 report = TRUE,
-                 resumefile = "test",
-                 includeobjects = TRUE)
+lm <- glm(route ~ flowRate, data = dt[76:nrow(dt)], family = "binomial")
+lm
+summ <- summary(lm)
+summ
+
+logit2prob <- function(logit){
+  odds <- exp(logit)
+  prob <- odds / (1 + odds)
+  return(prob)
+}
+coef <- coef(lm)
+
+df <- data.frame("route" = as.factor(ifelse(dt$route == 1, "rural", "freeway")),
+                 "flowRate" = dt$flowRate,
+                 "odds" = exp(coef[1] + (dt$flowRate)*coef[2]) / 
+                   (1 + exp(coef[1] + (dt$flowRate)*coef[2]))
+)
+df %>%
+  ggplot() +
+  geom_point(aes(x = flowRate, y = odds, color = route))
 ```
 
+Wow. Amazing. As the flow rate increases, the likelihood of it being a freeway increases. The intercept is low because slower roads are more likely to be rural. It's below zero because there are no roads with extremely low flow rates to tell it that that doesn't make sense.
