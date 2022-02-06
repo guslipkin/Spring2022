@@ -181,10 +181,10 @@ lmSumm
 
 pred <- round(predict(lm, test, type = "response"))
 table(pred, test$mpg01)
-mean(pred == test$mpg01)
+mean(pred != test$mpg01)
 ```
 
-The test error is $.8877$.
+The test error is $.1122$.
 
 # Problem 5
 > Use the `Boston` data set to fit a logistic regression model to predict whether a given census tract has a crime rate above or below the median using various predictors. You will have to create the response variable yourself using the variables from the data set. Describe your findings. 
@@ -196,7 +196,8 @@ head(dt)
 ```
 
 ```{r}
-rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE)
+set.seed(2022)
+rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE, prob = c(.8, .2))
 
 train <- dt[rowPicker, !c("crim")]
 test <- dt[!rowPicker]
@@ -222,6 +223,8 @@ table(pred, test$danger)
 mean(pred == test$danger)
 ```
 
+This model is correct $86.84\%$ of the time and is based on the `zn`, `nox`, `rad`, and `tax` variables. If I change the training dataset to be a different sample, then the best regression changes as well.
+
 # Problem 6
 > You are given 151 observations of a travel survey collected in State College Pennsylvania (please see Problem6_Assignment3.xlsx). All the households in the sample are making the morning commute to work. They are all departing from the same origin (a large residential complex in the suburbs) and going to work in the Central Business District. They have the choice of two alternate routes: 1) a two-lane rural road (speed limit = 35mph, 1 lane each direction) and 2) a limited access four-lane freeway (speed limit = 55mph, 2 lanes each direction). Please estimate a model of route choice (i.e., the likelihood of an individual traveler taking one of the two routes) including all the appropriate predictors. Describe your findings i.e., include the coefficient estimates and odds ratios and justify the sign of your variables. The dataset includes the following variables: 
 
@@ -233,18 +236,21 @@ head(dt)
 dt$route <- ifelse(dt$route == 1, 1, 0)
 ```
 
-```{r warning=FALSE}
+```{r}
 # if you don't have `dewey` installed...
 # install.packages("devtools")
 # devtools::install_github("guslipkin/dewey")
+set.seed(2022)
+rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE, prob = c(.66, .33))
 regs <- dewey::regsearch(
-    fDT = dt[1:75],
+    data = dt[rowPicker],
     dependent = "route",
     independent = colnames(dt[, !c("route")]),
+    # independent = c("travelTime", "flowRate", "lights", "sex"),
     minvar = 1,
-    maxvar = 13,
+    maxvar = 4,
     family = "binomial",
-    topN = 3,
+    topN = 0,
     interactions = FALSE,
     multi = TRUE
   )
@@ -252,16 +258,11 @@ regs
 ```
 
 ```{r}
-lm <- glm(route ~ flowRate, data = dt[76:nrow(dt)], family = "binomial")
+lm <- glm(route ~ flowRate, data = dt[!rowPicker], family = "binomial")
 lm
 summ <- summary(lm)
 summ
 
-logit2prob <- function(logit){
-  odds <- exp(logit)
-  prob <- odds / (1 + odds)
-  return(prob)
-}
 coef <- coef(lm)
 
 df <- data.frame("route" = as.factor(ifelse(dt$route == 1, "rural", "freeway")),
