@@ -101,9 +101,7 @@ table(test_pred_lr, test_data$default)
 
 
 ### Linear Discriminant Analysis
-```{r}
 
-```
 The LDA output indicates that our prior probabilities are $\pi_1(x) = 0.9667$ and 
 $\pi_2(x) = 0.0333$; in other words, 96.67% of the training observations are customers who did not default and about 3% represent those that defaulted. 
 
@@ -137,7 +135,7 @@ We see that predict returns a list with three elements. The first element, `clas
 
 ```{r}
 #Misclassification Rate
-
+(49+3)/1999
 ```
 
 ROC Curves
