@@ -245,48 +245,45 @@ rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE, prob = c(.66, .33))
 regs <- dewey::regsearch(
     data = dt[rowPicker],
     dependent = "route",
-    independent = colnames(dt[, !c("route", "travelTime", "flowRate")]),
+    independent = colnames(dt[, !c("route")]),
     # independent = c("travelTime", "flowRate", "lights", "sex"),
     minvar = 1,
     maxvar = 5,
     family = "binomial",
     topN = 0,
-    interactions = FALSE,
+    interactions = TRUE,
     multi = FALSE
   )
-regs
 
 91 - 91 # 1
+x <- 13
 maxvar <- 1
 y <- sum(choose(choose(x, 2) + x, 1:maxvar))
 y - ((x^(maxvar - 1) - 1) * choose(x, (maxvar - 1)))
 
 4186 - 4030 # 2
+x <- 13
 maxvar <- 2
 y <- sum(choose(choose(x, 2) + x, 1:maxvar))
 y - ((x^(maxvar - 1) - 1) * choose(x, (maxvar - 1)))
 
 125671 - 112567 # 3
+x <- 13
 maxvar <- 3
 y <- sum(choose(choose(x, 2) + x, 1:maxvar))
 y - ((x^(maxvar - 1) - 1) * choose(x, (maxvar - 1)))
 
 2798341 - 2263287 # 4
+x <- 13
 maxvar <- 4
 y <- sum(choose(choose(x, 2) + x, 1:maxvar))
 y - ((x^(maxvar - 1) - 1) * choose(x, (maxvar - 1)))
-
-49302799 - ??? # 5
-maxvar <- 5
-y <- sum(choose(choose(x, 2) + x, 1:maxvar))
 
 # ((y - 112567) / choose(x, 2)) + 1 == x^2
 # ((y - 112567) / choose(x, 2)) == x^2 - 1
 # ((y - 112567) / choose(x, 2)) == x^2 - 1
 # y - 112567 == (x^2 - 1) * choose(x, 2)
 # 112567 == (-(x^2 - 1) * choose(x, 2)) + y
-
-data.frame(t(list2DF(regs)))
 ```
 
 ```{r}
@@ -305,9 +302,6 @@ df <- data.frame("route" = as.factor(ifelse(dt$route == 1, "rural", "freeway")),
 df %>%
   ggplot() +
   geom_point(aes(x = flowRate, y = odds, color = route))
-
-class(c(.5, .5))
-length(c(.5, .5))
 ```
 
 Wow. Amazing. As the flow rate increases, the likelihood of it being a freeway increases. The intercept is low because slower roads are more likely to be rural. It's below zero because there are no roads with extremely low flow rates to tell it that that doesn't make sense.

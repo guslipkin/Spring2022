@@ -82,6 +82,8 @@ table(pred$class, test$Direction)
 mean(pred$class == test$Direction)
 ```
 
+The model has 49.39% correct predictions.
+
 ## 13f
 > Repeat (d) using QDA
 > 
@@ -94,6 +96,8 @@ table(pred$class, test$Direction)
 
 mean(pred$class == test$Direction)
 ```
+
+The model has 50.40% correct predictions.
 
 # Problem 2 (Q14)
 > In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the `Auto` data set.
@@ -136,9 +140,9 @@ test <- dt[!rowPicker]
 regs <-
   dewey::regsearch(train,
                    "mpg01",
-                   colnames(train[,!c("mpg01", "mpg")]),
+                   colnames(train[,!c("mpg01", "mpg", "name")]),
                    1,
-                   8,
+                   7,
                    "binomial",
                    0,
                    FALSE,
@@ -149,16 +153,16 @@ form <- as.formula("mpg01 ~ + weight + year")
 
 ## 14d
 > Perform LDA on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
-> 
-> Explore the data graphically in order to investigate the association between `mpg01` and the other features. Which of the other features seem most likely to be useful in predicting `mpg01`? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
 
 ```{r}
 lda <- lda(form, data = train, family = "binomial")
 pred <- predict(lda, test)
 table(pred$class, test$mpg01)
 
-mean(pred$class == test$mpg01)
+mean(pred$class != test$mpg01)
 ```
+
+The test error is 12.79%.
 
 ## 14e
 > Perform QDA on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
@@ -168,33 +172,37 @@ qda <- qda(form, data = train, family = "binomial")
 pred <- predict(qda, test)
 table(pred$class, test$mpg01)
 
-mean(pred$class == test$mpg01)
+mean(pred$class != test$mpg01)
 ```
+
+The model has 10.47% error.
 
 ## 14f
 > Perform logistic regression on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
 
 ```{r}
 train <- train[, !c("mpg", "name")]
-lm <- glm(mpg01 ~ ., data = train, family = "binomial")
+lm <- glm(form, data = train, family = "binomial")
 lmSumm <- summary(lm)
-coefs <- coef(lmSumm)[-1,4] <= .05
-
-# This prunes the regression until only significant variables remain
-while(length(coefs) != sum(coefs)) {
-  form <- paste("mpg01 ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
-  form <- substr(form, 1, nchar(form) - 2)
-  form
-  lm <- glm(formula = form, data = train, family = "binomial")
-  lmSumm <- summary(lm)
-  coefs <- coef(lmSumm)[-1,4] <= .05
-}
-lmSumm
+# coefs <- coef(lmSumm)[-1,4] <= .05
+# 
+# # This prunes the regression until only significant variables remain
+# while(length(coefs) != sum(coefs)) {
+#   form <- paste("mpg01 ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
+#   form <- substr(form, 1, nchar(form) - 2)
+#   form
+#   lm <- glm(formula = form, data = train, family = "binomial")
+#   lmSumm <- summary(lm)
+#   coefs <- coef(lmSumm)[-1,4] <= .05
+# }
+# lmSumm
 
 pred <- round(predict(lm, test, type = "response"))
 table(pred, test$mpg01)
 mean(pred != test$mpg01)
 ```
+
+The model has 10.47% error. Pretty sure I just did the same thing twice...
 
 # Problem 3
 > Use the “Boston” data set from ISLR2 library to fit a LDA model to predict whether a given census tract has a crime rate above or below the median using various predictors. You will have to reuse the portion of creating the response variable from Assignment 3.  
@@ -214,16 +222,18 @@ test <- dt[!rowPicker]
 # if you don't have `dewey` installed...
 # install.packages("devtools")
 # devtools::install_github("guslipkin/dewey")
+old <- Sys.time()
 regs <-
   dewey::regsearch(train,
                    "danger",
-                   colnames(train[,!c("danger", "crim")]),
+                   c(colnames(train[,!c("danger", "crim")]), "indus*medv", "tax*ptratio", "lstat*tax"),
                    1,
                    12,
                    "binomial",
                    0,
                    FALSE,
                    TRUE)
+Sys.time() - old
 regs
 form <- as.formula("danger ~ + nox + rad")
 ```
@@ -237,6 +247,8 @@ table(pred$class, test$danger)
 mean(pred$class == test$danger)
 ```
 
+The model is 90.35% accurate.
+
 QDA
 ```{r}
 qda <- qda(form, data = train, family = "binomial")
@@ -246,3 +258,4 @@ table(pred$class, test$danger)
 mean(pred$class == test$danger)
 ```
 
+The model is 89.47% accurate.

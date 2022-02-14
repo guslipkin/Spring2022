@@ -181,14 +181,19 @@ The output contains the group means. But it does not contain the coefficients of
 Prediction with QDA
 
 ```{r}
-
-
+(4+47)/1999
 ```
 
 ```{r}
 #obtain the confusion matrix
+lda_model <- train(default ~ balance + student, data = train_data,  trControl = trainControl(method="cv"), method = "lda")
+lda_model
 
+lda_model_pred <- predict(lda_model, test_data)
+confusionMatrix(lda_model_pred, test_data$default)
 
+lda_pred_acc <- round(mean(lda_model_pred==test_data$default)*100,2)
+lda_pred_acc
 ```
 
 ```{r}
