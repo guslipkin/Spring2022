@@ -1,0 +1,248 @@
+---
+title: "Assignment 4"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output:
+  html_notebook:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+  pdf_document: default
+---
+
+# Problem 1 (Q13)
+> This question should be answered using the `Weekly` data set, which is part of the `ISLR2` package. This data is similar in nature to the `Smarket` data from this chapter’s lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+```{r}
+library(tidyverse)
+library(data.table)
+
+dt <- data.table(ISLR2::Weekly)
+head(dt)
+```
+
+
+## 13a
+> Produce some numerical and graphical summaries of the `Weekly` data. Do there appear to be any patterns?
+
+```{r}
+summary(dt)
+pairs(dt[, .(Year, Volume, Today, Direction)])
+pairs(dt[, .(Volume, Lag1, Lag2, Lag3, Lag4, Lag5)])
+```
+
+Volume goes up. Daily change is generally small. Lags look consistent to each other.
+
+## 13b
+> Use the full data set to perform a logistic regression with `Direction` as the response and the five lag variables plus `Volume` as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+
+```{r}
+dt$Direction <- ifelse(dt$Direction == "Up", 1, 0)
+lm <- glm(Direction ~ . - Year - Today, data = dt, family = "binomial")
+lm
+summary(lm)
+```
+
+Lag two appears the most statistically significant.
+
+## 13c
+> Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+
+```{r}
+pred <- round(predict(lm, dt, type = "response"))
+table(pred, dt$Direction)
+mean(pred == dt$Direction)
+```
+
+## 13d
+> Now fit the logistic regression model using a training data period from 1990 to 2008, with `Lag2` as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+train <- dt[Year %in% range(1990, 2008)]
+test <- dt[!(Year %in% range(1990, 2008))]
+lm <- glm(Direction ~ Lag2, data = train, family = "binomial")
+lm
+summary(lm)
+
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$Direction)
+mean(pred == test$Direction)
+```
+
+## 13e
+> Repeat (d) using LDA
+>
+> Now fit the logistic regression model using a training data period from 1990 to 2008, with `Lag2` as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+library(MASS)
+lda <- lda(Direction ~ Lag2, data = train, family = "binomial")
+pred <- predict(lda, test)
+table(pred$class, test$Direction)
+
+mean(pred$class == test$Direction)
+```
+
+## 13f
+> Repeat (d) using QDA
+> 
+> Now fit the logistic regression model using a training data period from 1990 to 2008, with `Lag2` as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+```{r}
+qda <- qda(Direction ~ Lag2, data = train, family = "binomial")
+pred <- predict(qda, test)
+table(pred$class, test$Direction)
+
+mean(pred$class == test$Direction)
+```
+
+# Problem 2 (Q14)
+> In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the `Auto` data set.
+
+```{r}
+dt <- data.table(ISLR2::Auto)
+```
+
+## 14a
+> Create a binary variable, `mpg01`, that contains a 1 if `mpg` contains a value above its median, and a 0 if `mpg` contains a value below its median. You can compute the median using the `median()` function. Note you may find it helpful to use the `data.frame()` function to create a single data set containing both `mpg01` and the other `Auto` variables.
+
+```{r}
+dt$mpg01 <- ifelse(dt$mpg > median(dt$mpg), 1, 0)
+```
+
+## 14b
+> Explore the data graphically in order to investigate the association between `mpg01` and the other features. Which of the other features seem most likely to be useful in predicting `mpg01`? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+```{r warning=FALSE}
+GGally::ggpairs(dt[, !c("name", "mpg")], aes(color = as.factor(mpg01)))
+```
+
+I've definitely done this before already but whatever. There is a clear difference between cars that are above and below the median. The biggest differences are in the `displacement`, `horespower`, and `weight` categories.
+
+## 14c
+> Split the data into a training set and a test set.
+
+```{r}
+set.seed(2022)
+rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE, prob = c(.8, .2))
+
+train <- dt[rowPicker]
+test <- dt[!rowPicker]
+```
+
+```{r}
+# if you don't have `dewey` installed...
+# install.packages("devtools")
+# devtools::install_github("guslipkin/dewey")
+regs <-
+  dewey::regsearch(train,
+                   "mpg01",
+                   colnames(train[,!c("mpg01", "mpg")]),
+                   1,
+                   8,
+                   "binomial",
+                   0,
+                   FALSE,
+                   TRUE)
+regs
+form <- as.formula("mpg01 ~ + weight + year")
+```
+
+## 14d
+> Perform LDA on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
+> 
+> Explore the data graphically in order to investigate the association between `mpg01` and the other features. Which of the other features seem most likely to be useful in predicting `mpg01`? Scatterplots and boxplots may be useful tools to answer this question. Describe your findings.
+
+```{r}
+lda <- lda(form, data = train, family = "binomial")
+pred <- predict(lda, test)
+table(pred$class, test$mpg01)
+
+mean(pred$class == test$mpg01)
+```
+
+## 14e
+> Perform QDA on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
+
+```{r}
+qda <- qda(form, data = train, family = "binomial")
+pred <- predict(qda, test)
+table(pred$class, test$mpg01)
+
+mean(pred$class == test$mpg01)
+```
+
+## 14f
+> Perform logistic regression on the training data in order to predict `mpg01` using the variables that seemed most associated with `mpg01` in (b). What is the test error of the model obtained?
+
+```{r}
+train <- train[, !c("mpg", "name")]
+lm <- glm(mpg01 ~ ., data = train, family = "binomial")
+lmSumm <- summary(lm)
+coefs <- coef(lmSumm)[-1,4] <= .05
+
+# This prunes the regression until only significant variables remain
+while(length(coefs) != sum(coefs)) {
+  form <- paste("mpg01 ~", paste(names(coefs[coefs]), "+", collapse = " "), collapse = " ")
+  form <- substr(form, 1, nchar(form) - 2)
+  form
+  lm <- glm(formula = form, data = train, family = "binomial")
+  lmSumm <- summary(lm)
+  coefs <- coef(lmSumm)[-1,4] <= .05
+}
+lmSumm
+
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$mpg01)
+mean(pred != test$mpg01)
+```
+
+# Problem 3
+> Use the “Boston” data set from ISLR2 library to fit a LDA model to predict whether a given census tract has a crime rate above or below the median using various predictors. You will have to reuse the portion of creating the response variable from Assignment 3.  
+
+```{r}
+dt <- data.table(ISLR2::Boston)
+dt$danger <- ifelse(dt$crim > median(dt$crim), 1, 0)
+
+set.seed(2022)
+rowPicker <- sample(c(TRUE,FALSE), nrow(dt), TRUE, prob = c(.8, .2))
+
+train <- dt[rowPicker, !c("crim")]
+test <- dt[!rowPicker]
+```
+
+```{r}
+# if you don't have `dewey` installed...
+# install.packages("devtools")
+# devtools::install_github("guslipkin/dewey")
+regs <-
+  dewey::regsearch(train,
+                   "danger",
+                   colnames(train[,!c("danger", "crim")]),
+                   1,
+                   12,
+                   "binomial",
+                   0,
+                   FALSE,
+                   TRUE)
+regs
+form <- as.formula("danger ~ + nox + rad")
+```
+
+LDA
+```{r}
+lda <- lda(form, data = train, family = "binomial")
+pred <- predict(lda, test)
+table(pred$class, test$danger)
+
+mean(pred$class == test$danger)
+```
+
+QDA
+```{r}
+qda <- qda(form, data = train, family = "binomial")
+pred <- predict(qda, test)
+table(pred$class, test$danger)
+
+mean(pred$class == test$danger)
+```
+
