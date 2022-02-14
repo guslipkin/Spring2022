@@ -1,0 +1,62 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(data.table)
+```
+
+
+```{r}
+nyc_squirrels <- fread("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-29/nyc_squirrels.csv")
+```
+
+```{r warning=FALSE}
+nyc_squirrels %>%
+  melt.data.table(id.vars = "age", measure.vars = c("location", "running", "chasing", "climbing", "eating", "foraging")) %>%
+  .[, .N, by = .(age, variable, value)] %>%
+  ggplot() +
+  geom_bar(aes(x = value, y = N, fill = age), stat = "identity", position = "dodge") +
+  facet_wrap(~ variable, scales = "free_x")
+
+nyc_squirrels %>%
+  melt.data.table(id.vars = "age", measure.vars = c("kuks", "quaas", "moans", "tail_flags", "tail_twitches")) %>%
+  .[, .N, by = .(age, variable, value)] %>%
+  ggplot() +
+  geom_bar(aes(x = value, y = N, fill = age), stat = "identity", position = "dodge") +
+  facet_wrap(~ variable, scales = "free_x")
+```
+
+```{r warning=FALSE}
+nyc_squirrels %>%
+  melt.data.table(id.vars = "age", measure.vars = c("location", "running", "chasing", "climbing", "eating", "foraging")) %>%
+  .[, .N, by = .(age, variable, value)] %>%
+  ggplot() +
+  geom_bar(aes(x = value, y = log(N), fill = age), stat = "identity", position = "dodge") +
+  facet_wrap(~ variable, scales = "free_x")
+
+nyc_squirrels %>%
+  melt.data.table(id.vars = "age", measure.vars = c("kuks", "quaas", "moans", "tail_flags", "tail_twitches")) %>%
+  .[, .N, by = .(age, variable, value)] %>%
+  ggplot() +
+  geom_bar(aes(x = value, y = log(N), fill = age), stat = "identity", position = "dodge") +
+  facet_wrap(~ variable, scales = "free_x")
+```
+
+```{r}
+squirrel_age <- nyc_squirrels[, age01 := ifelse(age == "Adult", 1, 0)]
+lm <- glm(age01 ~ location + running + chasing + climbing + eating + foraging + 
+            kuks + quaas + moans + tail_flags + tail_twitches, 
+          squirrel_age, family = "binomial") 
+lm
+summary(lm)
+
+ind <- c("location", "running", "chasing", "climbing", "eating", 
+                 "foraging", "kuks", "quaas", "moans", "tail_flags", 
+                 "tail_twitches")
+regs <- dewey::regsearch(squirrel_age, "age01", ind, 1, 10, "binomial", 0, FALSE, TRUE)
+head(regs, 10)
+```
+
