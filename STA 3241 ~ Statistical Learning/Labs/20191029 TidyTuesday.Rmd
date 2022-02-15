@@ -11,6 +11,7 @@ library(data.table)
 
 ```{r}
 nyc_squirrels <- fread("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-29/nyc_squirrels.csv")
+nyc_squirrels <- nyc_squirrels[!is.na(age)]
 ```
 
 ```{r warning=FALSE}
@@ -46,17 +47,30 @@ nyc_squirrels %>%
 ```
 
 ```{r}
-squirrel_age <- nyc_squirrels[, age01 := ifelse(age == "Adult", 1, 0)]
+rowPicker <- sample(c(TRUE,FALSE), nrow(nyc_squirrels), TRUE)
+
+test <- nyc_squirrels[!rowPicker]
+
+train <- nyc_squirrels[rowPicker, age01 := ifelse(age == "Adult", 1, 0)]
 lm <- glm(age01 ~ location + running + chasing + climbing + eating + foraging + 
             kuks + quaas + moans + tail_flags + tail_twitches, 
-          squirrel_age, family = "binomial") 
+          train, family = "binomial") 
 lm
 summary(lm)
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$age01)
+mean(pred != test$age01)
 
 ind <- c("location", "running", "chasing", "climbing", "eating", 
                  "foraging", "kuks", "quaas", "moans", "tail_flags", 
                  "tail_twitches")
-regs <- dewey::regsearch(squirrel_age, "age01", ind, 1, 10, "binomial", 0, FALSE, TRUE)
+regs <- dewey::regsearch(train, "age01", ind, 1, 10, "binomial", 0, FALSE, TRUE)
 head(regs, 10)
+form <- as.formula("age01 ~ + eating + foraging + location + tail_twitches")
+lm <- glm(form, train, family = "binomial")
+
+pred <- round(predict(lm, test, type = "response"))
+table(pred, test$age01)
+mean(pred != test$age01)
 ```
 

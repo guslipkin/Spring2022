@@ -22,7 +22,7 @@
 
 3. What is the minimum purchase amount of the Treasury Securites? 
 
-   - **A minimum of \$25**
+   - **A minimum of \$100**
 
 4. What is the minimum purchase amount of the Series I bonds?
 
