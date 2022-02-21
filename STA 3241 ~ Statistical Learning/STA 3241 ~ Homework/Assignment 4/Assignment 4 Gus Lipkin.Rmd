@@ -228,7 +228,7 @@ regs <-
                    "danger",
                    c(colnames(train[,!c("danger", "crim")]), "indus*medv", "tax*ptratio", "lstat*tax"),
                    1,
-                   12,
+                   5,
                    "binomial",
                    0,
                    FALSE,

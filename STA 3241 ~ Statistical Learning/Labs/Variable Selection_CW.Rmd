@@ -1,0 +1,241 @@
+---
+title: "Variable Selection using Best Subset and Stepwise Selection"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(leaps)
+```
+
+# Example 1 using Water dataset on Canvas
+We will use the Water.csv dataset provided on canvas. This data contains 43 years of snow precipitation (in inches) measured at six different sites ( variables APMAM, APSAB, APSLAKE, OPBPC, OPRC, OPSLAKE) in the Owens Valley, California. You are interested in predicting water availability using the stream runoff variable in acre-feet (BSAAM variable). Accurate stream runoff predictions will help engineers, planners and policy makers to make effective decisions for water conservation. 
+
+Load the dataset
+
+```{r}
+dt <- fread("data/Water.csv")[, !c("Year")]
+```
+The first row contains information about Year which is not of concern for this analysis. We will remove the firstrow.
+
+```{r}
+
+```
+
+Correlation among variables
+
+```{r}
+cor(dt)
+```
+
+Reduce the number of digits after the decimal
+
+```{r}
+round(cor(dt), 3)
+```
+
+The response variable is highly correlated with OP features. AP features are highly correlated with each other and OP features signaling the presence of multicollinearity.
+
+```{r}
+GGally::ggpairs(dt)
+```
+
+Linear Model using lm 
+
+```{r}
+lm <- lm(BSAAM ~ ., dt)
+summary(lm)
+```
+
+Interestingly, OPBPC is not significant despite being highly correlated with the response variable. In short, when we control for the other OP features, OPBPC no longer explains any meaningful variation of the predictor, which is to say that OPBPC adds nothing from a statistical standpoint with OPRC and OPSLAKE already in the model.
+
+## Best Subset Selection
+Best subset selection is performed using regsubsets() function which is part of the leaps package. This function identifies the best model that contains a given number of predictors using RSS. The syntax is similar to lm()
+
+```{r}
+best_fit <- regsubsets(BSAAM ~ ., dt, nvmax = 7)
+best_summary <- summary(best_fit)
+```
+
+Create a best_summary object to examine the AIC, Cp, BIC and Adjusted R-square of the models. The goal is to choose a model with minimum AIC, Cp, BIC but with maximum adjusted R-square.
+
+```{r}
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+```
+
+In a linear model, AIC and Cp are proportional to each other, so we will only concern ourselves with Cp, which follows the output available in the leaps package. BIC tends to select the models with fewer variables than Cp, so we will compare both. To do so, we can create and analyze two plots side by side.
+
+```{r}
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+The left side plot indicates that model with three features has the lowest Cp. 
+The plot on the right indicates the variables in the model with lowest Cp. The way to read this plot is to select the lowest Cp value at the top of the y axis, which is 1.2. Then, move to the right and look at the colored blocks corresponding to the x axis. Doing this, we see that APSLAKE, OPRC, and OPSLAKE are the features included in this specific model.
+
+We can also use the following commands to find the models with lowest bic and highest R-square values. 
+
+```{r}
+which.min(best_summary$bic)
+which.max(best_summary$adjr2)
+```
+
+```{r}
+best_summary$adjr2
+best_summary$bic
+```
+
+Adjusted R-square barely changes when considering a model with 3 or more variables. 
+
+A simple model with three predictors can be considered. 
+
+```{r}
+regs <- dewey::regsearch(dt, "BSAAM", colnames(dt[, !c("BSAAM")]), 1, 7, 
+                         "gaussian", 0, FALSE, FALSE)
+regs <- regs[str_count(formula, "\\+") == 3,]
+regs
+
+form <- as.formula("BSAAM ~ + APSLAKE + OPRC + OPSLAKE")
+```
+
+## Forward and Backward Selection
+
+regsubsets() can be used to perform forward or backward stepwise selection using the argument method ="forward" or method = "backward"
+
+```{r}
+best_fit <- regsubsets(BSAAM ~ ., dt, nvmax = 7, method = "forward")
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+
+```{r}
+best_fit <- regsubsets(BSAAM ~ ., dt, nvmax = 7, method = "backward")
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+We can see that the model results from all the above three methods are the same. 
+
+#Example 2: Using Hitters dataset from ISLR2 package
+
+```{r}
+dt <- data.table(ISLR2::Hitters)
+head(dt)
+dim(dt)
+```
+
+We are interested in determining the performance factors that affect the salary. 
+
+Check for missing values
+
+Remove the 59 players with missing salary information
+
+```{r}
+dt <- dt[rowSums(is.na(dt)) == 0]
+```
+
+Best subset selection using regsubsets
+
+```{r}
+best_fit <- regsubsets(Salary ~ ., dt)
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+By default regsubsets() only reports results up to the best eight-variable model. We can fit as many variables as we want by using the nvmax option as follows: 
+
+```{r}
+best_fit <- regsubsets(Salary ~ ., dt, nvmax = 19)
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+Check the r-sq and Cp values
+```{r}
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+```
+
+```{r}
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "bic")
+plot(best_fit, scale = "bic")
+```
+
+```{r}
+best_fit <- regsubsets(Salary ~ ., dt, nvmax = 19, method = "forward")
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+```{r}
+best_fit <- regsubsets(Salary ~ ., dt, nvmax = 19, method = "backward")
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+```
+
+```{r, eval=FALSE}
+regs <- dewey::regsearch(dt, "Salary", colnames(dt[, !c("Salary")]), 1, 19, 
+                         "gaussian", 0, FALSE, TRUE)
+```
+
+```{r}
+
+```
+
+The best one-variable through six-variable models are identical for best subset and forward selection. However, the best seven-variable models identified by best subset, forward and backward selection are different. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
