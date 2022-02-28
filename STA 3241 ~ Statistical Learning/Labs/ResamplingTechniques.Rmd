@@ -1,0 +1,120 @@
+---
+title: "Resampling in R"
+output: html_notebook
+---
+
+We will use the caret package to implement the following crossvalidation techniques for linear regression
+1. Validation Set Approach
+2. Leave one out cross validation
+3. K-fold cross validation
+
+Some of the statistical metrics used to evaluate the accuracy of the regression models
+
+1. Root Mean Squared Error (RMSE):  This is the square root of the average squared difference between the actual and predicted value of the model. It is an estimate of the average prediction error made by the modeland hence decreasing the RMSE increases the accuracy of the model. 
+
+2. Mean Absolute Error (MAE): This gives the absolute difference between the actual value and the predicted value of the target variable. This is sensitive to outliers and lower the MAE, the better the model. 
+
+3. R-Squared: Percent of variation in the dependent variable explained by the independent variables. Higher the value, the better. 
+
+
+Load the required packages
+
+
+```{r}
+library(ISLR2) #ISLR textbook
+library(caret) # crossvalidation methods
+library(tidyverse) # data visualization and processing
+library(datarium) # we will use "marketing" dataset from this package to illustrate the crossvalidation techniques
+```
+
+We will use the marketing dataset from datarium package. This dataset contains impact of advertising  on youtube, facebook and newspaper and corresponding sales information. All the information is in thousands of dollars
+
+```{r}
+data <- marketing
+head(data)
+```
+## Validation Set Approach
+
+The data is randomly divided into training and testing datasets. The split ratio p can be adjusted for the training vs testing split (example 50-50, 80-20, 70-30). The model is trained on the training dataset and applied on the testing dataset. The prediction error is calculated to evaluate model performance. 
+
+```{r}
+set.seed(123) # For reproducibility
+
+train <- createDataPartition(data$sales, p=0.8, list = FALSE) # 80% of dataset is used for training
+
+train_data <- data[train, ] # generate the training data
+test_data <- data[-train, ] # generate test data from rows not included in train_data
+
+#Building a model
+
+model1 <- lm(sales ~ ., data = train_data)
+
+# Predict the target variable using test data
+pred_1 <- predict(model1, test_data)
+
+#Compute the accuracy estimates
+data.frame(R_Square = R2(pred_1, test_data$sales),
+           RMSE = RMSE(pred_1, test_data$sales),
+           MAE = MAE(pred_1, test_data$sales))
+
+```
+## Leave One Out Cross Validation
+
+This method splits the data into training and testing datasets by leaving one observation out for testing and training on n-1 observations. This process is repeated until the model is trained and tested on all the observations. The overall prediction error is calculated as the average of all the prediction errors
+
+
+```{r}
+# First define the traincontrol to specify LOOCV
+train_control <- trainControl(method ="LOOCV")
+
+# Build the model on the training dataset
+
+model_loocv <- train(sales ~ ., data = train_data, method = "lm", trControl = train_control)
+
+pred_loocv <- predict(model_loocv, test_data)
+
+#Compute the accuracy estimates
+data.frame(R_Square = R2(pred_loocv, test_data$sales),
+           RMSE = RMSE(pred_loocv, test_data$sales),
+           MAE = MAE(pred_loocv, test_data$sales))
+```
+## K-fold Cross Validation
+
+This method divides the data into k equal folds (or subsets). Out of these K folds, one fold is used for validation and the rest are used for training and this process is repeated K times till the model is trained and tested on all the folds.
+
+```{r}
+# First define the traincontrol to specify k-fold
+train_control <- trainControl(method ="cv", number = 10)
+
+# Build the model on the training dataset
+
+model_kfold <- train(sales ~ ., data = train_data, method = "lm", trControl = train_control)
+
+pred_kfold <- predict(model_kfold, test_data)
+
+#Compute the accuracy estimates
+data.frame(R_Square = R2(pred_kfold, test_data$sales),
+           RMSE = RMSE(pred_kfold, test_data$sales),
+           MAE = MAE(pred_kfold, test_data$sales))
+
+```
+## Repeated K-fold Cross Validation
+
+Repeating the K-fold algorithm a certain number of times. 
+
+```{r}
+# First define the traincontrol to specify repeated k-fold
+train_control <- trainControl(method ="repeatedcv", number = 10, repeats = 3)
+
+# Build the model on the training dataset
+
+model_repkfold<-train(sales ~ ., data = train_data, method = "lm", trControl = train_control)
+
+pred_repkfold <- predict(model_repkfold, test_data)
+
+#Compute the accuracy estimates
+data.frame(R_Square = R2(pred_repkfold, test_data$sales),
+           RMSE = RMSE(pred_repkfold, test_data$sales),
+           MAE = MAE(pred_repkfold, test_data$sales))
+```
+

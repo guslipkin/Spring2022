@@ -1,0 +1,181 @@
+---
+title: "Ridge and Lasso Regression"
+output: html_notebook
+---
+
+In this notebook, we will use the Credit dataset from ISLR2 package to estimate Ridge and LASSO regression models. The dataset includes information on Income, Limit, Rating, Student status etc. along with the average credit card balance in dollars. 
+
+We will use the gmlnet() package to automatically standardize the predictors. 
+Load the libraries
+
+```{r}
+library(data.table)
+library(ISLR2)
+library(tidyverse)
+library(caret)
+library(glmnet)
+```
+
+Load the dataset
+
+```{r}
+dt <- data.table(ISLR2::Credit)[, !c("ID")]
+head(dt)
+```
+The first column is an identifier and not a predictor. It needs to be removed. 
+
+Create training/testing datasets by setting seed
+
+```{r}
+set.seed(123)
+
+rowPicker <- sample(c(TRUE, FALSE), nrow(dt), replace = TRUE, prob = c(.8, .2))
+
+train_data <- dt[rowPicker]
+test_data <- dt[!rowPicker]
+```
+
+```{r}
+# 80% of dataset is used for training
+```
+
+create the training and testing datasets
+```{r}
+# generate test data from rows not included in train_data
+```
+
+Set up the train control for 10-fold cross validation
+
+```{r}
+# First define the traincontrol to specify k-fold
+train_control <- trainControl(method ="cv", number = 10)
+```
+
+Before we estimate the ridge and lasso models, we need consider a range of values for the regularization parameter $\lambda$. We will consider values between 0.01 and 10^5. 
+
+```{r}
+lambda <- 10^seq(-2, 5, length = 100)
+```
+
+## Ridge Regression
+
+```{r}
+model_ridge <- train(Balance ~ ., data = train_data, method = "glmnet", 
+                     trControl = train_control, 
+                     tuneGrid = expand.grid(alpha = 0, lambda = lambda))
+summary(model_ridge)
+```
+
+Obtain model coefficients
+
+```{r}
+coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
+```
+
+Make predictions
+
+```{r}
+prediction_ridge <- predict(model_ridge, newdata = test_data)
+```
+
+Check model performance
+
+```{r}
+c("R_Square" = R2(prediction_ridge, test_data$Balance),
+  "RMSE" = RMSE(prediction_ridge, test_data$Balance),
+  "MAE" = MAE(prediction_ridge, test_data$Balance))
+```
+## Lasso Regression
+
+same code as Ridge except the alpha is changed to 1
+
+```{r}
+model_lasso <- train(Balance ~ ., data = train_data, method = "glmnet", 
+                     trControl = train_control, 
+                     tuneGrid = expand.grid(alpha = 1, lambda = lambda))
+summary(model_lasso)
+```
+
+Obtain model coefficients
+
+```{r}
+coef(model_lasso$finalModel, model_lasso$bestTune$lambda)
+```
+Make predictions
+
+```{r}
+prediction_lasso <- predict(model_lasso, newdata = test_data)
+```
+
+Check model performance
+
+```{r}
+c("R_Square" = R2(prediction_lasso, test_data$Balance),
+  "RMSE" = RMSE(prediction_lasso, test_data$Balance),
+  "MAE" = MAE(prediction_lasso, test_data$Balance))
+```
+## Linear Model
+
+```{r}
+model_linear <- train(Balance ~ ., data = train_data, 
+                     method = "lm", 
+                     metric = "Rsquared")
+coef(model_linear$finalModel)
+```
+
+
+Make predictions
+
+```{r}
+prediction_linear <- predict(model_linear, newdata = test_data)
+```
+
+Create a dataframe to compare coefficients of the three models
+
+```{r}
+data.frame(
+  ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
+  lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
+  linear = (model_linear$finalModel$coefficients)
+)
+```
+Rename the first two columns to ridge and lasso
+
+```{r}
+data.frame(
+  ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
+  lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
+  linear = (model_linear$finalModel$coefficients)
+) %>%  
+rename(ridge = s1, lasso = s1.1)
+```
+Create a dataframe to compare the model performance of the three models
+
+```{r}
+c("Ridge_Rsq" = R2(prediction_ridge, test_data$Balance),
+  "Lasso_Rsq" = R2(prediction_lasso, test_data$Balance),
+  "Linear_Rsq" = R2(prediction_linear, test_data$Balance))
+```
+## Plot the coefficients of model objects 
+
+We can use the coefplot package and the function coefpath() to plot the coefficients of ridge and lasso models. 
+
+Install the coefplot package in the console before running the following code
+
+```{r}
+library(coefplot)
+```
+
+Path plot for ridge regression
+
+```{r}
+coefpath(model_ridge$finalModel)
+```
+Regular Plot for comparison
+
+```{r}
+plot(model_ridge$finalModel, xvar = "lambda", label = T)
+```
+A similar plot can be done for the LASSO model
+
+

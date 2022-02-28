@@ -1,0 +1,325 @@
+---
+title: "Midterm Take Home"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output:
+  html_notebook:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+  pdf_document: default
+---
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(leaps)
+```
+
+# Intro
+
+```{r}
+dt <- data.table(ISLR2::Boston)
+head(dt)
+```
+
+The `ISLR2::Boston` dataset contains "A data set containing housing values in 506 suburbs of Boston." If you want to learn more, I suggest visiting [https://rdocumentation.org/packages/ISLR2/versions/1.3-1/topics/Boston](https://rdocumentation.org/packages/ISLR2/versions/1.3-1/topics/Boston).
+
+| Variable  | Description                                                  | Type    |
+| --------- | ------------------------------------------------------------ | ------- |
+| `crim`    | per capita crime rate by town.                               | double  |
+| `zn`      | proportion of residential land zoned for lots over 25,000 sq.ft. | double  |
+| `indus`   | proportion of non-retail business acres per town.            | double  |
+| `chas`    | Charles River dummy variable (=1 if tract bounds river; 0 otherwise). | integer |
+| `nox`     | nitrogen oxides concentration (parts per 10 million).        | double  |
+| `rm`      | average number of rooms per dwelling.                        | double  |
+| `age`     | proportion of owner-occupied units built prior to 1940       | double  |
+| `dis`     | weighted mean of distances to five Boston employment centres. | double  |
+| `rad`     | index of accessibility to radial highways                    | integer |
+| `tax`     | full-value property-tax rate per \$10,000.                   | double  |
+| `ptratio` | pupil-teacher ratio by town.                                 | double  |
+| `lstat`   | lower status of the population (percent).                    | double  |
+| `medv`    | median value of owner-occupied homes in \$1000s.             | double  |
+
+# Summary Stats
+```{r warning=FALSE}
+summary(dt)
+df <- dewey::ifelsedata(data.frame(round(cor(dt), 3)), 
+                        .75, "x >= y & x != 1", matchCols = FALSE)
+rownames(df) <- colnames(df)
+df
+GGally::ggpairs(dt[, c(1:6)])
+GGally::ggpairs(dt[, c(1, 7:12)])
+```
+The first output is the basic summary statistics, the second is a correlation matrix, but only keeping values above $.75$ 
+There's nothing crazy with these numbers. It is weird that only `tax` and `rad` are correlated above $.75$, but then again highways decrease property taxes or something. idk.
+
+# Splitting the data
+```{r}
+set.seed(123)
+
+rowPicker <- sample(c(TRUE, FALSE), nrow(dt), replace = TRUE, prob = c(.8, .2))
+
+trainDt <- dt[rowPicker]
+testDt <- dt[!rowPicker]
+```
+
+
+# Subset selection
+
+## Normal
+```{r}
+best_fit <- regsubsets(crim ~ ., trainDt, nvmax = 12)
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+
+par(mfrow = c(1, 2))
+plot(best_summary$bic, xlab = "number of features", ylab = "bic")
+plot(best_fit, scale = "bic")
+
+normal <- as.formula("crim ~ + zn + nox + dis + rad + ptratio + lstat + medv")
+```
+
+## Forward
+```{r}
+best_fit <- regsubsets(crim ~ ., trainDt, nvmax = 12, method = "forward")
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+
+par(mfrow = c(1, 2))
+plot(best_summary$bic, xlab = "number of features", ylab = "bic")
+plot(best_fit, scale = "bic")
+
+forward <- as.formula("crim ~ + zn + nox + rm + dis + rad + ptratio + lstat + medv")
+```
+
+## Backward
+```{r}
+best_fit <- regsubsets(crim ~ ., trainDt, nvmax = 12, method = "backward")
+best_summary <- summary(best_fit)
+
+data.table("BIC" = best_summary$bic,
+           "Cp" = best_summary$cp,
+           "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
+
+par(mfrow = c(1,2))
+plot(best_summary$cp, xlab = "number of features", ylab = "cp")
+plot(best_fit, scale = "Cp")
+
+par(mfrow = c(1, 2))
+plot(best_summary$bic, xlab = "number of features", ylab = "bic")
+plot(best_fit, scale = "bic")
+
+backward <- as.formula("crim ~ + zn + nox + dis + rad + ptratio + lstat + medv")
+```
+
+## Final selection
+```{r}
+regs <- dewey::regsearch(trainDt, "crim", c(colnames(trainDt[, !c("crim")]), "lstat*rad"), 1, 12, "gaussian", 0, FALSE, TRUE)
+regs
+
+dewey <- as.formula("crim ~ + lstat + rad")
+```
+
+
+```{r}
+# regsubsets produced the same arguments for normal and backward
+# dropped backward
+forms <- c(normal, forward, dewey)
+
+lapply(forms, function(x) { 
+  print(x)
+  print(summary(lm(formula = x, testDt)))
+  })
+```
+
+Again, `regsubsets` produces slightly better models, but mine is almost as good and is more *parsimonious*. As `lstat` increases by one, `crim` increases by $.237$ and when `rad` increases by one, `crim` increases by $.522$.
+
+# Ridge and Lasso Regression
+
+```{r}
+library(tidyverse)
+library(glmnet)
+library(caret)
+```
+
+## 10-fold Validation
+
+```{r}
+# First define the traincontrol to specify k-fold
+train_control <- trainControl(method ="cv", number = 10)
+
+lambda <- 10^seq(-2, 5, length = 1000)
+```
+
+### Ridge Regression
+
+```{r}
+model_ridge <- train(crim ~ ., data = trainDt, method = "glmnet", 
+                     trControl = train_control, 
+                     tuneGrid = expand.grid(alpha = 0, lambda = lambda))
+summary(model_ridge)
+
+coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
+
+prediction_ridge <- predict(model_ridge, newdata = testDt)
+
+c("R_Square" = R2(prediction_ridge, testDt$crim),
+  "RMSE" = RMSE(prediction_ridge, testDt$crim),
+  "MAE" = MAE(prediction_ridge, testDt$crim))
+```
+
+### LASSO Regression
+
+```{r}
+model_lasso <- train(crim ~ ., data = trainDt, method = "glmnet", 
+                     trControl = train_control, 
+                     tuneGrid = expand.grid(alpha = 1, lambda = lambda))
+summary(model_lasso)
+
+coef(model_lasso$finalModel, model_lasso$bestTune$lambda)
+
+prediction_lasso <- predict(model_lasso, newdata = testDt)
+
+c("R_Square" = R2(prediction_lasso, testDt$crim),
+  "RMSE" = RMSE(prediction_lasso, testDt$crim),
+  "MAE" = MAE(prediction_lasso, testDt$crim))
+```
+
+### A quick linear model
+
+```{r}
+model_linear <- train(crim ~ ., data = trainDt, 
+                     method = "lm", 
+                     metric = "Rsquared")
+coef(model_linear$finalModel)
+
+prediction_linear <- predict(model_linear, newdata = testDt)
+```
+
+### Model Comparisons
+
+```{r}
+data.frame(
+  ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
+  lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
+  linear = (model_linear$finalModel$coefficients)
+)
+
+data.frame(
+  ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
+  lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
+  linear = (model_linear$finalModel$coefficients)
+) %>%  
+rename(ridge = s1, lasso = s1.1)
+
+c("Ridge_Rsq" = R2(prediction_ridge, testDt$crim),
+  "Lasso_Rsq" = R2(prediction_lasso, testDt$crim),
+  "Linear_Rsq" = R2(prediction_linear, testDt$crim))
+```
+
+
+```{r}
+library(coefplot)
+
+coefpath(model_ridge$finalModel)
+
+plot(model_ridge$finalModel, xvar = "lambda", label = T)
+```
+
+## LOOCV
+
+```{r}
+# First define the traincontrol to specify k-fold
+train_control <- trainControl(method ="LOOCV")
+
+lambda <- 10^seq(-2, 5, length = 1000)
+```
+
+### Ridge Regression
+
+```{r}
+model_ridge <- train(crim ~ ., data = trainDt, method = "glmnet", 
+                     trControl = train_control, 
+                     tuneGrid = expand.grid(alpha = 0, lambda = lambda))
+summary(model_ridge)
+
+coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
+
+prediction_ridge <- predict(model_ridge, newdata = testDt)
+
+c("R_Square" = R2(prediction_ridge, testDt$crim),
+  "RMSE" = RMSE(prediction_ridge, testDt$crim),
+  "MAE" = MAE(prediction_ridge, testDt$crim))
+```
+
+### LASSO Regression
+
+```{r}
+model_lasso <- train(crim ~ ., data = trainDt, method = "glmnet", 
+                     trControl = train_control, 
+                     tuneGrid = expand.grid(alpha = 1, lambda = lambda))
+summary(model_lasso)
+
+coef(model_lasso$finalModel, model_lasso$bestTune$lambda)
+
+prediction_lasso <- predict(model_lasso, newdata = testDt)
+
+c("R_Square" = R2(prediction_lasso, testDt$crim),
+  "RMSE" = RMSE(prediction_lasso, testDt$crim),
+  "MAE" = MAE(prediction_lasso, testDt$crim))
+```
+
+### A quick linear model
+
+```{r}
+model_linear <- train(crim ~ ., data = trainDt, 
+                     method = "lm", 
+                     metric = "Rsquared")
+coef(model_linear$finalModel)
+
+prediction_linear <- predict(model_linear, newdata = testDt)
+```
+
+### Model Comparisons
+
+```{r}
+data.frame(
+  ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
+  lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
+  linear = (model_linear$finalModel$coefficients)
+)
+
+data.frame(
+  ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
+  lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
+  linear = (model_linear$finalModel$coefficients)
+) %>%  
+rename(ridge = s1, lasso = s1.1)
+
+c("Ridge_Rsq" = R2(prediction_ridge, testDt$crim),
+  "Lasso_Rsq" = R2(prediction_lasso, testDt$crim),
+  "Linear_Rsq" = R2(prediction_linear, testDt$crim))
+```
+
+
+```{r}
+library(coefplot)
+
+coefpath(model_ridge$finalModel)
+
+plot(model_ridge$finalModel, xvar = "lambda", label = T)
+```
