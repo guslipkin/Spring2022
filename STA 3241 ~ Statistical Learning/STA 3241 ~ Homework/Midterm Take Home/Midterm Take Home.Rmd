@@ -3,21 +3,31 @@ title: "Midterm Take Home"
 author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
 output:
   html_notebook:
-    toc: true
-    toc_depth: 2
-    toc_float: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
   pdf_document: default
+  html_document:
+    toc: yes
+    toc_depth: '3'
+    df_print: paged
 ---
 
-```{r}
+```{r message=FALSE, warning=FALSE}
+# load packages
 library(tidyverse)
 library(data.table)
 library(leaps)
+library(glmnet)
+library(caret)
 ```
 
 # Intro
 
+*Note: If code is repeated, it is only commented the first time*
+
 ```{r}
+# load and preview data
 dt <- data.table(ISLR2::Boston)
 head(dt)
 ```
@@ -29,7 +39,7 @@ The `ISLR2::Boston` dataset contains "A data set containing housing values in 50
 | `crim`    | per capita crime rate by town.                               | double  |
 | `zn`      | proportion of residential land zoned for lots over 25,000 sq.ft. | double  |
 | `indus`   | proportion of non-retail business acres per town.            | double  |
-| `chas`    | Charles River dummy variable (=1 if tract bounds river; 0 otherwise). | integer |
+| `chas`    | Charles River dummy variable (=1 if tract bounds river; 0 otherwise). | integer (boolean) |
 | `nox`     | nitrogen oxides concentration (parts per 10 million).        | double  |
 | `rm`      | average number of rooms per dwelling.                        | double  |
 | `age`     | proportion of owner-occupied units built prior to 1940       | double  |
@@ -42,23 +52,31 @@ The `ISLR2::Boston` dataset contains "A data set containing housing values in 50
 
 # Summary Stats
 ```{r warning=FALSE}
+# get summary stats
 summary(dt)
+# check for any correlation coefficients over .75
 df <- dewey::ifelsedata(data.frame(round(cor(dt), 3)), 
                         .75, "x >= y & x != 1", matchCols = FALSE)
+# set the row names
 rownames(df) <- colnames(df)
+# preview the correlation matrix
 df
-GGally::ggpairs(dt[, c(1:6)])
-GGally::ggpairs(dt[, c(1, 7:12)])
+# produce pairs plots with correlation coefficient
+GGally::ggpairs(dt[, c(1:6)], progress = FALSE)
+GGally::ggpairs(dt[, c(1, 7:12)], progress = FALSE)
 ```
 The first output is the basic summary statistics, the second is a correlation matrix, but only keeping values above $.75$ 
-There's nothing crazy with these numbers. It is weird that only `tax` and `rad` are correlated above $.75$, but then again highways decrease property taxes or something. idk.
+There's nothing crazy with these numbers. It is weird that only `tax` and `rad` are correlated above $.75$, but then again highways decrease property taxes or something. idk. I'm not an urban anything.
 
 # Splitting the data
 ```{r}
+# set the seed
 set.seed(123)
 
+# randomly generate TRUE/FALSE to split the data at an 80/20 split
 rowPicker <- sample(c(TRUE, FALSE), nrow(dt), replace = TRUE, prob = c(.8, .2))
 
+# split the data
 trainDt <- dt[rowPicker]
 testDt <- dt[!rowPicker]
 ```
@@ -68,21 +86,26 @@ testDt <- dt[!rowPicker]
 
 ## Normal
 ```{r}
+# run `regsubsets`
 best_fit <- regsubsets(crim ~ ., trainDt, nvmax = 12)
 best_summary <- summary(best_fit)
 
+# create a data.table of the BIC, CP, and R^2
 data.table("BIC" = best_summary$bic,
            "Cp" = best_summary$cp,
            "r2" = best_summary$adjr2)[order(r2 * -1, BIC, Cp)]
 
+# show the CP chart in two formats side-by-side
 par(mfrow = c(1,2))
 plot(best_summary$cp, xlab = "number of features", ylab = "cp")
 plot(best_fit, scale = "Cp")
 
+# show the BIC chart in two formats side-by-side
 par(mfrow = c(1, 2))
 plot(best_summary$bic, xlab = "number of features", ylab = "bic")
 plot(best_fit, scale = "bic")
 
+# save the best formula
 normal <- as.formula("crim ~ + zn + nox + dis + rad + ptratio + lstat + medv")
 ```
 
@@ -103,7 +126,7 @@ par(mfrow = c(1, 2))
 plot(best_summary$bic, xlab = "number of features", ylab = "bic")
 plot(best_fit, scale = "bic")
 
-forward <- as.formula("crim ~ + zn + nox + rm + dis + rad + ptratio + lstat + medv")
+forward <- as.formula("crim ~ + rad + lstat")
 ```
 
 ## Backward
@@ -123,38 +146,135 @@ par(mfrow = c(1, 2))
 plot(best_summary$bic, xlab = "number of features", ylab = "bic")
 plot(best_fit, scale = "bic")
 
-backward <- as.formula("crim ~ + zn + nox + dis + rad + ptratio + lstat + medv")
+backward <- as.formula("crim ~ + zn + dis + rad + medv")
 ```
 
 ## Final selection
-```{r}
+```{r message=FALSE, warning=FALSE}
+# run regsearch to find the best model
 regs <- dewey::regsearch(trainDt, "crim", c(colnames(trainDt[, !c("crim")]), "lstat*rad"), 1, 12, "gaussian", 0, FALSE, TRUE)
 regs
 
+# select the best model and save it
 dewey <- as.formula("crim ~ + lstat + rad")
 ```
 
 
 ```{r}
-# regsubsets produced the same arguments for normal and backward
-# dropped backward
-forms <- c(normal, forward, dewey)
+# create a vector of all formulas
+forms <- c(normal, forward, backward, dewey)
 
-lapply(forms, function(x) { 
+# lapply(forms, function(x) { 
+#   print(x)
+#   summary(lm(formula = x, testDt))
+#   })
+
+# print the formula and summary stats for each one
+for(x in forms) {
   print(x)
   print(summary(lm(formula = x, testDt)))
-  })
+  }
 ```
+
+### 10-fold Validation
+```{r}
+# set the trainControl method to 10-fold
+train_control <- trainControl(method = "cv", number = 10)
+
+# train the model
+model <- train(normal, data = trainDt, method = "lm", 
+                     trControl = train_control)
+# use the model to predict for the test data
+prediction_ridge <- predict(model, newdata = testDt)
+# save the stats for the current model
+Normal <- c("Type" = "10 Fold",
+            "R_Square" = R2(prediction_ridge, testDt$crim),
+            "RMSE" = RMSE(prediction_ridge, testDt$crim),
+            "MAE" = MAE(prediction_ridge, testDt$crim))
+
+train_control <- trainControl(method ="cv", number = 10)
+model <- train(forward, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model, newdata = testDt)
+Forward <- c("Type" = "10 Fold",
+             "R_Square" = R2(prediction_ridge, testDt$crim),
+             "RMSE" = RMSE(prediction_ridge, testDt$crim),
+             "MAE" = MAE(prediction_ridge, testDt$crim))
+
+model <- train(backward, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model, newdata = testDt)
+Backward <- c("Type" = "10 Fold",
+              "R_Square" = R2(prediction_ridge, testDt$crim),
+              "RMSE" = RMSE(prediction_ridge, testDt$crim),
+              "MAE" = MAE(prediction_ridge, testDt$crim))
+
+
+model <- train(dewey, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model, newdata = testDt)
+Dewey <- c("Type" = "10 Fold",
+           "R_Square" = R2(prediction_ridge, testDt$crim),
+           "RMSE" = RMSE(prediction_ridge, testDt$crim),
+           "MAE" = MAE(prediction_ridge, testDt$crim))
+
+# bind all the model results into a data.frame
+regStats <- rbind(Normal, Forward, Backward, Dewey)
+```
+
+### LOOCV
+```{r}
+train_control <- trainControl(method = "LOOCV")
+
+
+model_ridge <- train(normal, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model_ridge, newdata = testDt)
+Normal <- c("Type" = "LOOCV",
+            "R_Square" = R2(prediction_ridge, testDt$crim),
+            "RMSE" = RMSE(prediction_ridge, testDt$crim),
+            "MAE" = MAE(prediction_ridge, testDt$crim))
+
+train_control <- trainControl(method ="cv", number = 10)
+model_ridge <- train(forward, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model_ridge, newdata = testDt)
+Forward <- c("Type" = "LOOCV",
+             "R_Square" = R2(prediction_ridge, testDt$crim),
+             "RMSE" = RMSE(prediction_ridge, testDt$crim),
+             "MAE" = MAE(prediction_ridge, testDt$crim))
+
+model_ridge <- train(backward, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model_ridge, newdata = testDt)
+Backward <- c("Type" = "LOOCV",
+              "R_Square" = R2(prediction_ridge, testDt$crim),
+              "RMSE" = RMSE(prediction_ridge, testDt$crim),
+              "MAE" = MAE(prediction_ridge, testDt$crim))
+
+
+model_ridge <- train(dewey, data = trainDt, method = "lm", 
+                     trControl = train_control)
+prediction_ridge <- predict(model_ridge, newdata = testDt)
+Dewey <- c("Type" = "LOOCV",
+           "R_Square" = R2(prediction_ridge, testDt$crim),
+           "RMSE" = RMSE(prediction_ridge, testDt$crim),
+           "MAE" = MAE(prediction_ridge, testDt$crim))
+
+
+regStats <- rbind(regStats, Normal, Forward, Backward, Dewey)
+```
+
+
+```{r}
+# preview all the regressions so far
+regStats
+```
+
 
 Again, `regsubsets` produces slightly better models, but mine is almost as good and is more *parsimonious*. As `lstat` increases by one, `crim` increases by $.237$ and when `rad` increases by one, `crim` increases by $.522$.
 
 # Ridge and Lasso Regression
-
-```{r}
-library(tidyverse)
-library(glmnet)
-library(caret)
-```
 
 ## 10-fold Validation
 
@@ -162,6 +282,7 @@ library(caret)
 # First define the traincontrol to specify k-fold
 train_control <- trainControl(method ="cv", number = 10)
 
+# define the lambda
 lambda <- 10^seq(-2, 5, length = 1000)
 ```
 
@@ -173,13 +294,15 @@ model_ridge <- train(crim ~ ., data = trainDt, method = "glmnet",
                      tuneGrid = expand.grid(alpha = 0, lambda = lambda))
 summary(model_ridge)
 
+# get the coefficients
 coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
 
 prediction_ridge <- predict(model_ridge, newdata = testDt)
 
-c("R_Square" = R2(prediction_ridge, testDt$crim),
-  "RMSE" = RMSE(prediction_ridge, testDt$crim),
-  "MAE" = MAE(prediction_ridge, testDt$crim))
+Ridge <- c("Type" = "10 Fold",
+           "R_Square" = R2(prediction_ridge, testDt$crim),
+           "RMSE" = RMSE(prediction_ridge, testDt$crim),
+           "MAE" = MAE(prediction_ridge, testDt$crim))
 ```
 
 ### LASSO Regression
@@ -194,9 +317,12 @@ coef(model_lasso$finalModel, model_lasso$bestTune$lambda)
 
 prediction_lasso <- predict(model_lasso, newdata = testDt)
 
-c("R_Square" = R2(prediction_lasso, testDt$crim),
-  "RMSE" = RMSE(prediction_lasso, testDt$crim),
-  "MAE" = MAE(prediction_lasso, testDt$crim))
+LASSO <- c("Type" = "10 Fold",
+           "R_Square" = R2(prediction_lasso, testDt$crim),
+           "RMSE" = RMSE(prediction_lasso, testDt$crim),
+           "MAE" = MAE(prediction_lasso, testDt$crim))
+
+regStats <- rbind(regStats, Ridge, LASSO)
 ```
 
 ### A quick linear model
@@ -213,6 +339,7 @@ prediction_linear <- predict(model_linear, newdata = testDt)
 ### Model Comparisons
 
 ```{r}
+# create data.frames to compare the results from the ridge, LASSO, and linear models
 data.frame(
   ridge = as.data.frame.matrix(coef(model_ridge$finalModel, model_ridge$finalModel$lambdaOpt)),
   lasso = as.data.frame.matrix(coef(model_lasso$finalModel, model_lasso$finalModel$lambdaOpt)), 
@@ -233,6 +360,7 @@ c("Ridge_Rsq" = R2(prediction_ridge, testDt$crim),
 
 
 ```{r}
+# chart the coefficients as lambda increases
 library(coefplot)
 
 coefpath(model_ridge$finalModel)
@@ -261,9 +389,10 @@ coef(model_ridge$finalModel, model_ridge$bestTune$lambda)
 
 prediction_ridge <- predict(model_ridge, newdata = testDt)
 
-c("R_Square" = R2(prediction_ridge, testDt$crim),
-  "RMSE" = RMSE(prediction_ridge, testDt$crim),
-  "MAE" = MAE(prediction_ridge, testDt$crim))
+Ridge <- c("Type" = "LOOCV", 
+           "R_Square" = R2(prediction_ridge, testDt$crim),
+           "RMSE" = RMSE(prediction_ridge, testDt$crim),
+           "MAE" = MAE(prediction_ridge, testDt$crim))
 ```
 
 ### LASSO Regression
@@ -278,9 +407,12 @@ coef(model_lasso$finalModel, model_lasso$bestTune$lambda)
 
 prediction_lasso <- predict(model_lasso, newdata = testDt)
 
-c("R_Square" = R2(prediction_lasso, testDt$crim),
-  "RMSE" = RMSE(prediction_lasso, testDt$crim),
-  "MAE" = MAE(prediction_lasso, testDt$crim))
+LASSO <- c("Type" = "LOOCV",
+           "R_Square" = R2(prediction_lasso, testDt$crim),
+           "RMSE" = RMSE(prediction_lasso, testDt$crim),
+           "MAE" = MAE(prediction_lasso, testDt$crim))
+
+regStats <- rbind(regStats, Ridge, LASSO)
 ```
 
 ### A quick linear model
@@ -323,3 +455,14 @@ coefpath(model_ridge$finalModel)
 
 plot(model_ridge$finalModel, xvar = "lambda", label = T)
 ```
+
+# Closing Thoughts
+
+```{r}
+# convert the stats to an actual data.table and preview them
+regStats
+regStats <- data.table("Model" = names(regStats[,1]), regStats)
+regStats[order(-R_Square)]
+```
+
+LASSO regression with both 10-fold and LOOCV produced the best results. I did notice that they each produced a different $\lambda$ value which I found mildly interesting. I'm assuming that this is largely just due to differences in how the model was developed. I'm pleasantly surprised to find my subset method ranked tied for third place with the forward subsets. I'm a little surprised that both models had the same $R^2$, $RMSE$, and $MAE$ for both 10-fold and LOOCV. I am surprised to find Ridge towards the bottom of the list, but not at all surprised that backwards and normal subsets did even worse.
