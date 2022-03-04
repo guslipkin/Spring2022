@@ -192,7 +192,6 @@ Normal <- c("Type" = "10 Fold",
             "RMSE" = RMSE(prediction_ridge, testDt$crim),
             "MAE" = MAE(prediction_ridge, testDt$crim))
 
-train_control <- trainControl(method ="cv", number = 10)
 model <- train(forward, data = trainDt, method = "lm", 
                      trControl = train_control)
 prediction_ridge <- predict(model, newdata = testDt)
@@ -235,7 +234,6 @@ Normal <- c("Type" = "LOOCV",
             "RMSE" = RMSE(prediction_ridge, testDt$crim),
             "MAE" = MAE(prediction_ridge, testDt$crim))
 
-train_control <- trainControl(method ="cv", number = 10)
 model_ridge <- train(forward, data = trainDt, method = "lm", 
                      trControl = train_control)
 prediction_ridge <- predict(model_ridge, newdata = testDt)
