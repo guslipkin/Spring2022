@@ -1,0 +1,148 @@
+---
+title: "Homework 6"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output:
+  html_document:
+    df_print: paged
+  html_notebook: default
+  pdf_document: default
+---
+
+> Vacuum pumps are being audited to determine if the process is in control and also capable of meeting the customer specifications. Samples of size n=5 are taken each hour of the day and tested with the data on vacuum recorded. The results of 10 consecutive hours of testing are provided.
+
+```{r}
+library(tidyverse)
+library(data.table)
+```
+
+
+```{r}
+dt <- fread("Homework 6.csv")
+dt
+
+valueTable <- data.table("SampleSize" = 2:7,
+                         "A2" = c(1.88, 1.02, .73, .58, .48, .42),
+                         "D3" = c(rep(0, 5), .08),
+                         "D4" = c(3.27, 2.57, 2.28, 2.11, 2.00, 1.92),
+                         "d2" = c(1.13, 1.69, 2.06, 2.33, 2.53, 2.70))
+
+valueTable <- valueTable[ncol(dt) - 2]
+```
+
+## A. 
+> Find the x and R of each sample and record above.
+
+```{r}
+dt[, c("xBar", "R") := .(rowMeans(dt[,2:ncol(dt)]),
+                          do.call(pmax, dt[,2:ncol(dt)]) - 
+                           do.call(pmin, dt[,2:ncol(dt)]))]
+dt
+```
+
+## B
+> Find and record the grand mean $\bar{\bar{x}}$ and $\bar{R}$ in the appropriate boxes.
+
+```{r}
+writeLines(paste("The grand mean is:", xBar <- mean(dt$xBar)))
+writeLines(paste("The R is:", R <- mean(dt$R)))
+```
+
+## C
+> Find the UCL and LCL for the $\bar{x}$ chart.
+
+```{r}
+writeLines(paste("The UCL for the x chart is:", xBarUCL <- xBar + (valueTable$A2 * R)))
+writeLines(paste("The LCL for the x chart is:", xBarLCL <- xBar - (valueTable$A2 * R)))
+```
+
+## D
+> Find the UCL and LCL for the R chart.
+
+```{r}
+writeLines(paste("The UCL for the R chart is:", RUCL <- valueTable$D4 * R))
+writeLines(paste("The LCL for the R chart is:", RLCL <- valueTable$D3 * R))
+```
+
+## E
+> Sketch out a control chart for the x-bar chart. Is the process in control in terms of the “average” vacuum pressure? ______ Yes or No
+
+```{r}
+dt %>%
+  ggplot() +
+  geom_hline(yintercept = xBarLCL, color = "red") +
+  geom_hline(yintercept = xBar, color = "green") +
+  geom_hline(yintercept = xBarUCL, color = "red") +
+  geom_line(aes(x = Sample, y = xBar)) +
+  geom_point(aes(x = Sample, y = xBar), size = 2) +
+  scale_x_continuous("Sample", 1:nrow(dt)) + 
+  ylim(c(xBarLCL - (xBarLCL * .05), xBarUCL * 1.05))
+
+if(min(dt$xBar) > xBarLCL & max(dt$xBar) < xBarUCL) {
+  writeLines("The process is in control in terms of the average.")
+} else {
+  writeLines("The process is not in control in terms of the average.")
+}
+```
+
+## F
+> Sketch out a control chart for the R chart. Is the process in control in terms of the “variation” in the process? _______ Yes or No
+
+```{r}
+dt %>%
+  ggplot() +
+  geom_hline(yintercept = R, color = "green") +
+  geom_hline(yintercept = RLCL, color = "red") +
+  geom_hline(yintercept = RUCL, color = "red") +
+  geom_line(aes(x = Sample, y = R)) +
+  geom_point(aes(x = Sample, y = R), size = 2) +
+  scale_x_continuous("Sample", 1:nrow(dt)) + 
+  ylim(c(RLCL - (RLCL * .05), RUCL * 1.05))
+
+if(min(dt$R) > RLCL & max(dt$R) < RUCL) {
+  writeLines("The process is in control in terms of the variation")
+} else {
+  writeLines("The process is not in control in terms of the variation")
+}
+```
+
+The process is in control in terms of the average.
+
+## G
+> Find the process standard deviation ($\sigma$)
+
+```{r}
+writeLines(paste("The standard deviation is:", sigma <- (R / valueTable$d2)))
+```
+
+## H
+> Find the appropriate process capability index for the process if the lower and upper specification limits are 8 to 20.
+
+```{r}
+LSL <- 8
+USL <- 20
+if((LSL + USL) / 2 == xBar) { 
+  writeLines("The process is centered")
+  C <- (USL - LSL) / (6 * sigma) 
+} else { 
+  writeLines("The process is not centered")
+  C <- min((USL - xBar) / (3 * sigma), 
+           (xBar - LSL) / (3 * sigma))
+}
+writeLines(paste("C is:", C))
+```
+
+
+## I
+> What is your interpretation of the capability index?
+
+```{r}
+if(C < 1) {
+  writeLines("Because C is less than one, the process is not capable and process improvement should begin immediately.")
+} else {
+  writeLines("Because C is greater than one, the process is capabale.")
+  if(C < 1.33) {
+    writeLines("However, because C is still under 1.33, we should probably improve the process a bit more.")
+  }
+}
+```
+
