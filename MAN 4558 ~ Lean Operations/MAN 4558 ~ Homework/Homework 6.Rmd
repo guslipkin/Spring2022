@@ -15,6 +15,7 @@ library(tidyverse)
 library(data.table)
 ```
 
+# Control Charts
 
 ```{r}
 dt <- fread("Homework 6.csv")
@@ -144,5 +145,44 @@ if(C < 1) {
     writeLines("However, because C is still under 1.33, we should probably improve the process a bit more.")
   }
 }
+```
+
+# Distances
+
+## Weighting
+```{r}
+df <- data.frame("factor" = c("traffic volume", "average income", "labor supply"),
+                 "factorWeight" = c(.5, .3, .2),
+                 "locationA" = c(5, 3, 2),
+                 "locationB" = c(3, 4, 3))
+df$weightedA <- df$factorWeight * df$locationA
+df$weightedB <- df$factorWeight * df$locationB
+writeLines(paste0("Weighted Score A: ", sum(df$weightedA)))
+writeLines(paste0("Weighted Score B: ", sum(df$weightedB)))
+```
+
+
+## Rectilinear
+```{r}
+df <- data.frame("warehouse" = LETTERS[1:3],
+                 "loads" = c(200, 50, 100),
+                 "x" = c(2, 7, 7),
+                 "y" = c(3, 3, 7))
+x <- 5
+y <- 5
+df$distance <- abs(df$x - x) + abs(df$y - y)
+df$cost <- df$loads * df$distance
+sum(df$cost)
+```
+
+
+## Distance Given
+```{r}
+df <- data.frame("towns" = LETTERS[1:4],
+                 "distanceA" = c(30, 6, 10.5, 4.5),
+                 "distanceB" = c(12, 12, 30, 24),
+                 "loads" = c(15, 10, 12, 8))
+writeLines(paste0("Distance A:", sum(df$loads * df$distanceA)))
+writeLines(paste0("Distance B:", sum(df$loads * df$distanceB)))
 ```
 
