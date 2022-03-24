@@ -24,7 +24,7 @@
 12. A trade in the multiple of 100 shares is called a **round lot**.
 13. An order for *immediate purchase* or sale at the best possible price is called a **market order**.
 14. The seller of an option contract is called an **option writer** and the price paid for the option itself is the called the **option premium**.
-15. Over-the-counter (OTC) trades take place **on the floor of the NASDAQ Stock Exchange**.
+15. Over-the-counter (OTC) trades take place **between brokerage firms**.
 16. Insider trading laws regulate the behavior of **anyone with nonpublic information about a firm**.
 
 ## Chapter 12
@@ -37,7 +37,7 @@
 21. If a person requires greater return when risk increases, that person is said to be **risk averse**.
 22. Which one of the following assets has historically had the highest average annual return?
     - **Common stocks**
-23. The benefits of diversification are greatest when asset returns have **zero correlations**.
+23. The benefits of diversification are greatest when asset returns have **negative correlations**.
 24. In comparing the deviations of returns, which one of the following assets has historically had the largest standard deviation of annual returns?
     - **Large company stocks**
 25. If one were to rank different assets from *highest* to *lowest* the basis of average historical return, the ranking would be **large company stocks, long-term corporate bonds, long term government bonds, US Treasury bills**.

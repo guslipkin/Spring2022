@@ -1,0 +1,120 @@
+---
+title: "Regression Trees"
+output: html_notebook
+---
+
+## Using Tree Package 
+
+```{r}
+library(tree) # To construct classification and regression trees
+library(ISLR2)
+library(tidyverse)
+library(data.table)
+library(caret)
+```
+
+```{r}
+dt <- Boston
+head(dt)
+```
+
+Split the data into training and test data 
+
+```{r}
+set.seed(1234)
+rowPicker <- sample(c(TRUE, FALSE), nrow(dt), replace = TRUE, prob = c(.5, .5))
+train <- dt[rowPicker, ]
+test <- dt[!rowPicker, ]
+```
+
+Create a regression tree using the training data
+```{r}
+tr <- tree(medv ~ ., train)
+summary(tr)
+```
+ The above output indicates that only three variables have been used in constructing the tree. Let us plot the tree
+ 
+```{r}
+plot(tr)
+text(tr, pretty = 0)
+```
+The variable lstat measures the percentage of individuals with lower socioeconomic status. rm corresponds to the average number of rooms. 
+The tree indicates that larger values of rm or lower values of lstat correspond to more expensive houses. 
+
+```{r}
+tr_prune <- cv.tree(tr, K = 10)
+plot(tr_prune$size, tr_prune$dev, type = "b")
+```
+
+```{r}
+tr_dPrune <- prune.tree(tr, best = 4)
+plot(tr_dPrune)
+text(tr_dPrune, pretty = 0)
+```
+
+We use the unpruned tree to make predictions on the test dataset
+
+```{r}
+reg_yhat <- predict(tr, test)
+plot(reg_yhat, test[, 13])
+abline(0, 1)
+```
+
+Compute the test MSE
+
+```{r}
+mean((reg_yhat - test[, 13])^2)
+```
+
+## Using the caret package and rpart method
+
+```{r}
+library(rpart.plot)
+```
+
+Partition the data
+```{r}
+set.seed(1234)
+rowPicker <- sample(c(TRUE, FALSE), nrow(dt), replace = TRUE, prob = c(.8, .2))
+train <- dt[rowPicker, ]
+test <- dt[!rowPicker, ]
+```
+
+Set up Crossvalidation
+
+```{r}
+reg_control <- trainControl(method = "cv", number = 10)
+```
+
+Model a regression tree
+
+```{r}
+tr <- train(medv ~ ., train, method = "rpart", trControl = reg_control)
+tr
+```
+
+```{r}
+
+```
+Plot the pruned tree
+
+```{r}
+rpart.plot(tr$finalModel)
+```
+
+```{r}
+
+```
+Find the MSE on the test data
+
+```{r}
+reg_yhat <- predict(tr, test)
+plot(reg_yhat, test[, 13])
+abline(0, 1)
+```
+
+
+```{r}
+mean((reg_yhat - test[, 13])^2)
+```
+

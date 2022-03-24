@@ -1,0 +1,117 @@
+---
+title: "Clasification Trees"
+output: html_notebook
+---
+
+## Using Tree Package 
+
+```{r}
+library(tree) # To construct classification and regression trees
+library(ISLR2)
+library(tidyverse)
+library(caret)
+```
+
+We will use the Carseats dataset. A simulated data set containing sales of child car seats at 400 different stores with the following 11 variables
+
+Sales - Unit sales (in thousands) at each location
+
+CompPrice - Price charged by competitor at each location
+
+Income -Community income level (in thousands of dollars)
+
+Advertising -Local advertising budget for company at each location (in thousands of dollars)
+
+Population - Population size in region (in thousands)
+
+Price
+Price company charges for car seats at each site
+
+ShelveLoc - A factor with levels Bad, Good and Medium indicating the quality of the shelving location for the car seats at each site
+
+Age - Average age of the local population
+
+Education - Education level at each location
+
+Urban - A factor with levels No and Yes to indicate whether the store is in an urban or rural location
+
+US - A factor with levels No and Yes to indicate whether the store is in the US or not
+
+```{r}
+set.seed(1234)
+dt <- Carseats
+head(dt)
+```
+Sales is a continuous variable and we will recode it as a binary variable. Create a binary variable High that takes yes if sales exceed 8 and no otherwise
+
+```{r}
+dt$Sales <- as.factor(ifelse(dt$Sales > 8, "Yes", "No"))
+```
+
+We will fit a classification tree and use the summary function to check the internal nodes, terminal nodes and the training error rate.  
+
+```{r}
+class_tree <- tree(Sales ~ ., dt)
+summary(class_tree)
+```
+Plot the tree using the plot() function. We use the pretty=0 argument to include category names for qualitative predictors. 
+
+```{r}
+plot(class_tree)
+text(class_tree, pretty = 0)
+```
+
+Let us split the data into training and test data to evaluate the performance of the tree. 
+
+```{r}
+set.seed(1234)
+rowPicker <- sample(c(TRUE, FALSE), nrow(dt), replace = TRUE, prob = c(.5, .5))
+train <- dt[rowPicker, ]
+test <- dt[!rowPicker, ]
+```
+
+```{r}
+class_tree <- tree(Sales ~ ., train)
+summary(class_tree)
+```
+Plot the tree
+
+```{r}
+plot(class_tree)
+text(class_tree, pretty = 0)
+```
+
+
+```{r}
+tr_pred <- predict(class_tree, test, type = "class")
+table(tr_pred, test$Sales)
+(96+52)/nrow(test)
+```
+
+## Using the caret package and rpart method
+
+```{r}
+library(rpart.plot)
+class_tree <- train(Sales ~ ., train, method = "rpart")
+class_tree
+```
+We can find the pruned tree using rpart.plot
+
+```{r}
+rpart.plot(class_tree$finalModel)
+```
+
+```{r}
+
+```
+Use the test data to predict 
+
+```{r}
+tr_pred <- predict(class_tree, test)
+confusionMatrix(tr_pred, test$Sales)
+```
+When you are using k-fold crossvalidation, you use the same method as above except you add a control term. 
+
+
+
+
