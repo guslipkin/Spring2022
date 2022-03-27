@@ -41,6 +41,7 @@ US - A factor with levels No and Yes to indicate whether the store is in the US 
 set.seed(1234)
 dt <- Carseats
 head(dt)
+summary(dt$Sales)
 ```
 Sales is a continuous variable and we will recode it as a binary variable. Create a binary variable High that takes yes if sales exceed 8 and no otherwise
 
@@ -92,7 +93,7 @@ table(tr_pred, test$Sales)
 
 ```{r}
 library(rpart.plot)
-class_tree <- train(Sales ~ ., train, method = "rpart")
+class_tree <- train(Sales ~ ., train %>% select(Sales, US, ShelveLoc), method = "rpart")
 class_tree
 ```
 We can find the pruned tree using rpart.plot
