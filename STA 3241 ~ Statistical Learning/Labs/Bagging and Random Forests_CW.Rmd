@@ -1,0 +1,125 @@
+---
+title: "Bagging and Random Forest"
+output: html_notebook
+---
+
+
+```{r}
+library(ISLR2)
+library(data.table)
+library(randomForest)
+library(caret)
+
+set.seed(1234)
+data <- Boston
+head(data)
+```
+
+Partition the data
+```{r}
+intrain1<-createDataPartition(y=data$medv, p=0.8, list=FALSE)
+train_data1 <- data[intrain1, ]
+test_data1 <- data[-intrain1, ]
+```
+
+Set up Crossvalidation
+
+```{r}
+reg_control <-trainControl(method="cv", number = 10)
+```
+
+## Bagging
+
+```{r}
+bag_boston <- randomForest(medv ~ ., data = train_data1, mtry = 12)
+bag_boston
+```
+
+The argument mtry=12 indicates that all 12 predictors should be considered for each split of the tree - in other words bagging should be done. 
+
+Let us check the performance of this model on the test data 
+
+```{r}
+y_hat_boston <- predict(bag_boston, test_data1)
+plot(y_hat_boston, test_data1$medv)
+abline(0, 1)
+mean(y_hat_boston - test_data1$medv)^2
+```
+
+We can change the number of trees by using the ntree argument. 
+
+```{r}
+bag_boston <- randomForest(medv ~ ., data = train_data1, mtry = 12, ntree = 25)
+bag_boston
+
+y_hat_boston <- predict(bag_boston, test_data1)
+plot(y_hat_boston, test_data1$medv)
+abline(0, 1)
+mean(y_hat_boston - test_data1$medv)^2
+```
+
+```{r}
+
+```
+
+## Random Forest
+
+Growing a random forest tree proceeds exactly in the same way, except that we use a smaller value for mtry. By default, randomForest() uses p/3 variables when building a random forest of regression trees and sqrt(p) variables when building a random forest of classification trees. 
+
+Let us try a random forest with mtry = 6
+
+```{r}
+rf_boston <- randomForest(medv ~ ., data = train_data1, mtry = 6, importance = TRUE)
+rf_boston
+```
+
+```{r}
+yhat_rf_boston <- predict(rf_boston, test_data1)
+plot(yhat_rf_boston, test_data1$medv)
+abline(0, 1)
+```
+
+We can use the importance() function to see the importance of each variable
+
+```{r}
+importance(rf_boston)
+
+```
+
+```{r}
+varImpPlot(rf_boston)
+```
+## Another way to specify Bagging and Random Forest Models
+
+We apply bagging/Random Forest using the rf method. There is one hyperparameter to tune by which is mtry (i.e. the number of variables randomly sampled at each split)
+
+
+```{r}
+tunegrid <- expand.grid(mtry = c(13))
+```
+
+Let us now look at model performance
+
+```{r}
+bag.boston <- train(medv ~ ., data = train_data1, tuneGrid = tunegrid, method = "rf", importance = TRUE)
+```
+
+```{r}
+yhat.bag <- predict(bag.boston$finalModel, newdata = test_data1)
+plot(yhat.bag, test_data1$medv)
+abline(0, 1)
+```
+
+This model fits pretty well. The number of trees can be changed. 
+
+```{r}
+mean((yhat.bag - test_data1$medv)^2)
+```
+
+
+```{r}
+varImp(bag.boston$finalModel)
+```
+
+For random forest, you will change the mtry variables using the same syntax. 
+

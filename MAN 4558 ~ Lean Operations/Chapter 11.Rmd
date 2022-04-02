@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r}
+library(tidyverse)
+library(data.table)
+library(combinat)
+```
+
+# Designing Process Layouts
+
+```{r include = FALSE, echo = FALSE}
+sideX <- 40
+sideY <- 40
+layoutX <- 2
+layoutY <- 2
+cells <- (layoutX * layoutY)
+dt <- data.frame(
+  as.matrix(Matrix::forceSymmetric(matrix(c(0, 10, 40, 30, 
+                                            NA, 0, 30, 50, 
+                                            NA, NA, 0, 10, 
+                                            NA, NA, NA, 0), 4, 4), uplo = "L")))
+colnames(dt) <- LETTERS[1:cells]
+
+perms <- lapply(permn(LETTERS[1:cells]), function(x) { matrix(x, layoutY, layoutX) })
+let <- c(1:cells)
+names(let) <- LETTERS[1:cells]
+
+dist <- unique(permn(c(1:layoutX, 1:layoutY)))
+dist <- dist[1:(length(dist)-1)]
+totals <- unlist(lapply(perms, function(x) {
+  20*dt[let[x[1,1]],let[x[2,1]]] + 
+    20*dt[let[x[1,1]],let[x[1,2]]] +
+    20*dt[let[x[2,2]],let[x[1,2]]] +
+    20*dt[let[x[2,2]],let[x[2,1]]] +
+    40*dt[let[x[1,1]],let[x[2,2]]] +
+    40*dt[let[x[1,2]],let[x[2,1]]]
+}))
+
+min(totals)
+perms[which(totals == min(totals))]
+```
+
+```{r}
+sideX <- 3
+sideY <- 2
+layoutX <- 3
+layoutY <- 2
+cells <- (layoutX * layoutY)
+dt <- data.frame(
+  as.matrix(Matrix::forceSymmetric(matrix(c(0, 30, 0, 34, 50, 25,
+                                            NA, 0, 0, 55, 10, 10,
+                                            NA, NA, 0, 0, 15, 5,
+                                            NA, NA, NA, 0, 0, 0,
+                                            NA, NA, NA, NA, 0, 30,
+                                            NA, NA, NA, NA, NA, 0), 
+                                          cells, cells), uplo = "L")))
+
+colnames(dt) <- LETTERS[1:cells]
+
+perms <- lapply(permn(LETTERS[1:cells]), function(x) {
+  matrix(x, layoutY, layoutX)
+  })
+let <- c(1:cells)
+names(let) <- LETTERS[1:cells]
+
+# perms <- list(matrix(c("F", "B", "E", "C", "A", "D"), 2, 3),
+#               matrix(c("C", "B", "D", "E", "A", "F"), 2, 3))
+
+pathsLet <- t(combn(names(let), 2))
+pathsN <- t(combn(1:cells, 2))
+
+totals <- unlist(lapply(perms, function(x) {
+  sum(apply(pathsLet, 1, function(y) {
+    start <- which(x == y[1], arr.ind = TRUE)
+    end <- which(x == y[2], arr.ind = TRUE)
+    ((abs(end[,"row"] - start[,"row"]) * (sideY / layoutY)) +
+      (abs(end[,"col"] - start[,"col"]) * (sideX / layoutX))) *
+      dt[let[y[1]], y[2]]
+  }))
+}))
+
+min(totals)
+perms[which(totals == min(totals))]
+```
+
