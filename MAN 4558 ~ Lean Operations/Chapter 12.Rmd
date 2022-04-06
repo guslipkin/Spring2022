@@ -1,0 +1,87 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(data.table)
+```
+
+# Infinite Population, Single Server, Single Line, Single Phase (MM1)
+
+```{r}
+# mean arrival rate
+writeLines(paste("lambda:", lambda <- 6, "minutes"))
+# mean service rate
+writeLines(paste("mu:", mu <- 10, "minutes"))
+# average system utilization
+writeLines(paste0("rho: ", rho <- lambda / mu * 100, "% utilization"))
+rho <- rho / 100
+# average number of customers in system
+writeLines(paste("L:", L <- lambda / (mu - lambda), "people"))
+# average number of customers in line
+writeLines(paste("LQ:", LQ <- rho * L, "people"))
+# average time in system (including service)
+writeLines(paste("W:", W <- 1 / (mu - lambda) * 60, "minutes"))
+# average time spent waiting
+writeLines(paste("WQ:", WQ <- rho * W, "minutes"))
+# probability of n customers in the system
+n <- 3
+writeLines(paste("Pn:", Pn <- (1 - rho) * (rho ^ n)))
+# probability of >n customers in the system
+n <- 4
+writeLines(paste("Pnplus:", Pnplus <- rho ^ (n + 1)))
+```
+
+## Homework 
+
+# 1
+```{r}
+# mean arrival rate
+writeLines(paste("lambda:", lambda <- 60 / 30, "minutes"))
+# mean service rate
+writeLines(paste("mu:", mu <- 1.5, "minutes"))
+# average system utilization
+writeLines(paste0("rho: ", rho <- lambda / mu * 100, "% utilization"))
+rho <- rho / 100
+# average number of customers in system
+writeLines(paste("L:", L <- lambda / (mu - lambda), "people"))
+# average number of customers in line
+writeLines(paste("LQ:", LQ <- rho * L, "people"))
+# average time in system (including service)
+writeLines(paste("W:", W <- 1 / (mu - lambda) * 60, "minutes"))
+# average time spent waiting
+writeLines(paste("WQ:", WQ <- rho * W, "minutes"))
+# probability of n customers in the system
+n <- 10
+writeLines(paste("Pn:", Pn <- (1 - rho) * (rho ^ n)))
+# probability of >n customers in the system
+n <- 15
+writeLines(paste("Pnplus:", Pnplus <- rho ^ (n + 1)))
+```
+
+# 2
+```{r}
+# mean arrival rate
+writeLines(paste("lambda:", lambda <- 60 / 40, "minutes"))
+# mean service rate
+writeLines(paste("mu:", mu <- 1, "minutes"))
+# average system utilization
+writeLines(paste0("rho: ", rho <- lambda / mu * 100, "% utilization"))
+rho <- rho / 100
+# average number of customers in system
+writeLines(paste("L:", L <- lambda / (mu - lambda), "people"))
+# average number of customers in line
+writeLines(paste("LQ:", LQ <- rho * L, "people"))
+# average time in system (including service)
+writeLines(paste("W:", W <- 1 / (mu - lambda) * 60, "minutes"))
+# average time spent waiting
+writeLines(paste("WQ:", WQ <- rho * W, "minutes"))
+# probability of n customers in the system
+n <- 3
+writeLines(paste("Pn:", Pn <- (1 - rho) * (rho ^ n)))
+# probability of >n customers in the system
+n <- 4
+writeLines(paste("Pnplus:", Pnplus <- rho ^ (n + 1)))
+```

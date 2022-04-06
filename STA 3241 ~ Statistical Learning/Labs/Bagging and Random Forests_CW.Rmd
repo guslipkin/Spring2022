@@ -25,7 +25,7 @@ test_data1 <- data[-intrain1, ]
 Set up Crossvalidation
 
 ```{r}
-reg_control <-trainControl(method="cv", number = 10)
+reg_control <- trainControl(method="cv", number = 10)
 ```
 
 ## Bagging
