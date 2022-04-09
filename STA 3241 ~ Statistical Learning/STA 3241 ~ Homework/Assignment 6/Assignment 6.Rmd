@@ -1,7 +1,9 @@
 ---
 title: "R Notebook"
 author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 You are provided the data on home sales in a mid-western city that includes 522 observations. The variables in the dataset in order are sales price ($), finished area of the residence (square feet), number of bedrooms and bathrooms, presence of air conditioning and pool, number of cars the garage will hold, quality of construction (low, medium or high), architectural style, lot size (square feet) and presence or absence of adjacency to a highway. 
@@ -54,7 +56,7 @@ yHatRpart <- predict(rpartTree, test)
 summary(yHatRpart)
 plot(yHatRpart, test$salePrice)
 abline(0, 1)
-mseRpart <- mean(yHatRpart - test$salePrice)^2
+mseRpart <- mean((yHatRpart - test$salePrice)^2)
 ```
 
 ```{r}
@@ -64,7 +66,7 @@ summary(yHatRegular)
 plot(yHatRegular, test$salePrice)
 abline(0, 1)
 text(regularTree, pretty = 0)
-mseTree <- mean(yHatRegular - test$salePrice)^2
+mseTree <- mean((yHatRegular - test$salePrice)^2)
 ```
 
 # Bagging
@@ -75,7 +77,7 @@ bag
 yHatBag <- predict(bag, test)
 plot(yHatBag, test$salePrice)
 abline(0, 1)
-mseBagging <- mean(yHatBag - test$salePrice)^2
+mseBagging <- mean((yHatBag - test$salePrice)^2)
 ```
 
 # Random Forests
@@ -86,20 +88,20 @@ rf
 yHatRf <- predict(bag, test)
 plot(yHatRf, test$salePrice)
 abline(0, 1)
-mseRf <- mean(yHatRf - test$salePrice)^2
+mseRf <- mean((yHatRf - test$salePrice)^2)
 
 importance(rf)
 varImpPlot(rf)
 ```
 
 ```{r}
-tunegrid <- expand.grid(mtry = c(8))
-bag2 <- train(salePrice ~ ., train, tuneGrid = tunegrid, method = "rf", importance = TRUE)
-yHatBag2 <- predict(bag2$finalModel, newdata = test)
-plot(yHatBag2, test$salePrice)
-abline(0, 1)
-mseBag2 <- mean(yHatBag2 - test$salePrice)^2
-varImp(bag2$finalModel)
+# tunegrid <- expand.grid(mtry = c(8))
+# bag2 <- train(salePrice ~ ., train, tuneGrid = tunegrid, method = "rf", importance = TRUE)
+# yHatBag2 <- predict(bag2$finalModel, newdata = test)
+# plot(yHatBag2, test$salePrice)
+# abline(0, 1)
+# mseBag2 <- mean((yHatBag2 - test$salePrice)^2)
+# varImp(bag2$finalModel)
 ```
 
 # Boosting
@@ -119,7 +121,7 @@ plot(boost, i = "sqFt")
 yHatBoost <- predict(boost, test, n.trees = 5000)
 plot(yHatBoost, test$salePrice)
 abline(0, 1)
-mseBoost <- mean(yHatBoost - test$salePrice)^2
+mseBoost <- mean((yHatBoost - test$salePrice)^2)
 ```
 
 # Provide a comparison of the test MSE for the above methods. 

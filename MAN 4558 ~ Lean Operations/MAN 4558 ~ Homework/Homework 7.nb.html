@@ -9,9 +9,10 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Gus Lipkin ~ glipkin6737@floridapoly.edu" />
 
 
-<title>R Notebook</title>
+<title>Homework 7</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -1760,171 +1761,18 @@ pre code {
 
 
 
-<h1 class="title toc-ignore">R Notebook</h1>
+<h1 class="title toc-ignore">Homework 7</h1>
+<h4 class="author">Gus Lipkin ~ <a href="mailto:glipkin6737@floridapoly.edu" class="email">glipkin6737@floridapoly.edu</a></h4>
 
 </div>
 
 
 <!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KGRhdGEudGFibGUpXG5gYGAifQ== -->
-<pre class="r"><code>library(tidyverse)
-library(data.table)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<div id="infinite-population-single-server-single-line-single-phase-mm1" class="section level1">
-<h1>Infinite Population, Single Server, Single Line, Single Phase (MM1)</h1>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBtZWFuIGFycml2YWwgcmF0ZVxud3JpdGVMaW5lcyhwYXN0ZShcImxhbWJkYTpcIiwgbGFtYmRhIDwtIDYsIFwibWludXRlc1wiKSlcbmBgYCJ9 -->
-<pre class="r"><code># mean arrival rate
-writeLines(paste(&quot;lambda:&quot;, lambda &lt;- 6, &quot;minutes&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoibGFtYmRhOiA2IG1pbnV0ZXNcbiJ9 -->
-<pre><code>lambda: 6 minutes</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBtZWFuIHNlcnZpY2UgcmF0ZVxud3JpdGVMaW5lcyhwYXN0ZShcIm11OlwiLCBtdSA8LSAxMCwgXCJtaW51dGVzXCIpKVxuYGBgIn0= -->
-<pre class="r"><code># mean service rate
-writeLines(paste(&quot;mu:&quot;, mu &lt;- 10, &quot;minutes&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoibXU6IDEwIG1pbnV0ZXNcbiJ9 -->
-<pre><code>mu: 10 minutes</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIHN5c3RlbSB1dGlsaXphdGlvblxud3JpdGVMaW5lcyhwYXN0ZTAoXCJyaG86IFwiLCByaG8gPC0gbGFtYmRhIC8gbXUgKiAxMDAsIFwiJSB1dGlsaXphdGlvblwiKSlcbmBgYCJ9 -->
-<pre class="r"><code># average system utilization
-writeLines(paste0(&quot;rho: &quot;, rho &lt;- lambda / mu * 100, &quot;% utilization&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicmhvOiA2MCUgdXRpbGl6YXRpb25cbiJ9 -->
-<pre><code>rho: 60% utilization</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmhvIDwtIHJobyAvIDEwMFxuIyBhdmVyYWdlIG51bWJlciBvZiBjdXN0b21lcnMgaW4gc3lzdGVtXG53cml0ZUxpbmVzKHBhc3RlKFwiTDpcIiwgTCA8LSBsYW1iZGEgLyAobXUgLSBsYW1iZGEpLCBcInBlb3BsZVwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>rho &lt;- rho / 100
-# average number of customers in system
-writeLines(paste(&quot;L:&quot;, L &lt;- lambda / (mu - lambda), &quot;people&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTDogMS41IHBlb3BsZVxuIn0= -->
-<pre><code>L: 1.5 people</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIG51bWJlciBvZiBjdXN0b21lcnMgaW4gbGluZVxud3JpdGVMaW5lcyhwYXN0ZShcIkxROlwiLCBMUSA8LSByaG8gKiBMLCBcInBlb3BsZVwiKSlcbmBgYCJ9 -->
-<pre class="r"><code># average number of customers in line
-writeLines(paste(&quot;LQ:&quot;, LQ &lt;- rho * L, &quot;people&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTFE6IDAuOSBwZW9wbGVcbiJ9 -->
-<pre><code>LQ: 0.9 people</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIHRpbWUgaW4gc3lzdGVtIChpbmNsdWRpbmcgc2VydmljZSlcbndyaXRlTGluZXMocGFzdGUoXCJXOlwiLCBXIDwtIDEgLyAobXUgLSBsYW1iZGEpICogNjAsIFwibWludXRlc1wiKSlcbmBgYCJ9 -->
-<pre class="r"><code># average time in system (including service)
-writeLines(paste(&quot;W:&quot;, W &lt;- 1 / (mu - lambda) * 60, &quot;minutes&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiVzogMTUgbWludXRlc1xuIn0= -->
-<pre><code>W: 15 minutes</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIHRpbWUgc3BlbnQgd2FpdGluZ1xud3JpdGVMaW5lcyhwYXN0ZShcIldROlwiLCBXUSA8LSByaG8gKiBXLCBcIm1pbnV0ZXNcIikpXG5gYGAifQ== -->
-<pre class="r"><code># average time spent waiting
-writeLines(paste(&quot;WQ:&quot;, WQ &lt;- rho * W, &quot;minutes&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiV1E6IDkgbWludXRlc1xuIn0= -->
-<pre><code>WQ: 9 minutes</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBwcm9iYWJpbGl0eSBvZiBuIGN1c3RvbWVycyBpbiB0aGUgc3lzdGVtXG5uIDwtIDNcbndyaXRlTGluZXMocGFzdGUoXCJQbjpcIiwgUG4gPC0gKDEgLSByaG8pICogKHJobyBeIG4pKSlcbmBgYCJ9 -->
-<pre class="r"><code># probability of n customers in the system
-n &lt;- 3
-writeLines(paste(&quot;Pn:&quot;, Pn &lt;- (1 - rho) * (rho ^ n)))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUG46IDAuMDg2NFxuIn0= -->
-<pre><code>Pn: 0.0864</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBwcm9iYWJpbGl0eSBvZiA+biBjdXN0b21lcnMgaW4gdGhlIHN5c3RlbVxubiA8LSA0XG53cml0ZUxpbmVzKHBhc3RlKFwiUG5wbHVzOlwiLCBQbnBsdXMgPC0gcmhvIF4gKG4gKyAxKSkpXG5gYGAifQ== -->
-<pre class="r"><code># probability of &gt;n customers in the system
-n &lt;- 4
-writeLines(paste(&quot;Pnplus:&quot;, Pnplus &lt;- rho ^ (n + 1)))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUG5wbHVzOiAwLjA3Nzc2XG4ifQ== -->
-<pre><code>Pnplus: 0.07776</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<div id="homework" class="section level2">
-<h2>Homework</h2>
-</div>
-</div>
-<div id="section" class="section level1">
-<h1>1</h1>
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBtZWFuIGFycml2YWwgcmF0ZVxud3JpdGVMaW5lcyhwYXN0ZShcImxhbWJkYTpcIiwgbGFtYmRhIDwtIDMwLCBcInBlb3BsZSBwZXIgaG91clwiKSlcbmBgYCJ9 -->
-<pre class="r"><code># mean arrival rate
-writeLines(paste(&quot;lambda:&quot;, lambda &lt;- 30, &quot;people per hour&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoibGFtYmRhOiAzMCBwZW9wbGUgcGVyIGhvdXJcbiJ9 -->
-<pre><code>lambda: 30 people per hour</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBtZWFuIHNlcnZpY2UgcmF0ZVxud3JpdGVMaW5lcyhwYXN0ZShcIm11OlwiLCBtdSA8LSA0MCwgXCJwZW9wbGUgcGVyIGhvdXJcIikpXG5gYGAifQ== -->
-<pre class="r"><code># mean service rate
-writeLines(paste(&quot;mu:&quot;, mu &lt;- 40, &quot;people per hour&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoibXU6IDQwIHBlb3BsZSBwZXIgaG91clxuIn0= -->
-<pre><code>mu: 40 people per hour</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIHN5c3RlbSB1dGlsaXphdGlvblxud3JpdGVMaW5lcyhwYXN0ZTAoXCJyaG86IFwiLCByaG8gPC0gbGFtYmRhIC8gbXUgKiAxMDAsIFwiJSB1dGlsaXphdGlvblwiKSlcbmBgYCJ9 -->
-<pre class="r"><code># average system utilization
-writeLines(paste0(&quot;rho: &quot;, rho &lt;- lambda / mu * 100, &quot;% utilization&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicmhvOiA3NSUgdXRpbGl6YXRpb25cbiJ9 -->
-<pre><code>rho: 75% utilization</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucmhvIDwtIHJobyAvIDEwMFxuIyBhdmVyYWdlIG51bWJlciBvZiBjdXN0b21lcnMgaW4gc3lzdGVtXG53cml0ZUxpbmVzKHBhc3RlKFwiTDpcIiwgTCA8LSBsYW1iZGEgLyAobXUgLSBsYW1iZGEpLCBcInBlb3BsZVwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>rho &lt;- rho / 100
-# average number of customers in system
-writeLines(paste(&quot;L:&quot;, L &lt;- lambda / (mu - lambda), &quot;people&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTDogMyBwZW9wbGVcbiJ9 -->
-<pre><code>L: 3 people</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIG51bWJlciBvZiBjdXN0b21lcnMgaW4gbGluZVxud3JpdGVMaW5lcyhwYXN0ZShcIkxROlwiLCBMUSA8LSByaG8gKiBMLCBcInBlb3BsZVwiKSlcbmBgYCJ9 -->
-<pre class="r"><code># average number of customers in line
-writeLines(paste(&quot;LQ:&quot;, LQ &lt;- rho * L, &quot;people&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTFE6IDIuMjUgcGVvcGxlXG4ifQ== -->
-<pre><code>LQ: 2.25 people</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIHRpbWUgaW4gc3lzdGVtIChpbmNsdWRpbmcgc2VydmljZSlcbndyaXRlTGluZXMocGFzdGUoXCJXOlwiLCBXIDwtIDEgLyAobXUgLSBsYW1iZGEpICogNjAsIFwibWludXRlc1wiKSlcbmBgYCJ9 -->
-<pre class="r"><code># average time in system (including service)
-writeLines(paste(&quot;W:&quot;, W &lt;- 1 / (mu - lambda) * 60, &quot;minutes&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiVzogNiBtaW51dGVzXG4ifQ== -->
-<pre><code>W: 6 minutes</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhdmVyYWdlIHRpbWUgc3BlbnQgd2FpdGluZ1xud3JpdGVMaW5lcyhwYXN0ZShcIldROlwiLCBXUSA8LSByaG8gKiBXLCBcIm1pbnV0ZXNcIikpXG5gYGAifQ== -->
-<pre class="r"><code># average time spent waiting
-writeLines(paste(&quot;WQ:&quot;, WQ &lt;- rho * W, &quot;minutes&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiV1E6IDQuNSBtaW51dGVzXG4ifQ== -->
-<pre><code>WQ: 4.5 minutes</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBwcm9iYWJpbGl0eSBvZiBuIGN1c3RvbWVycyBpbiB0aGUgc3lzdGVtXG5uIDwtIDEwXG53cml0ZUxpbmVzKHBhc3RlKFwiUG46XCIsIFBuIDwtICgxIC0gcmhvKSAqIChyaG8gXiBuKSkpXG5gYGAifQ== -->
-<pre class="r"><code># probability of n customers in the system
-n &lt;- 10
-writeLines(paste(&quot;Pn:&quot;, Pn &lt;- (1 - rho) * (rho ^ n)))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUG46IDAuMDE0MDc4Mzc4Njc3MzY4MlxuIn0= -->
-<pre><code>Pn: 0.0140783786773682</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBwcm9iYWJpbGl0eSBvZiA+biBjdXN0b21lcnMgaW4gdGhlIHN5c3RlbVxubiA8LSAxNVxud3JpdGVMaW5lcyhwYXN0ZShcIlBucGx1czpcIiwgUG5wbHVzIDwtIHJobyBeIChuICsgMSkpKVxuYGBgIn0= -->
-<pre class="r"><code># probability of &gt;n customers in the system
-n &lt;- 15
-writeLines(paste(&quot;Pnplus:&quot;, Pnplus &lt;- rho ^ (n + 1)))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUG5wbHVzOiAwLjAxMDAyMjU5NTc1NzYxODVcbiJ9 -->
-<pre><code>Pnplus: 0.0100225957576185</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-</div>
-<div id="section-1" class="section level1">
-<h1>2</h1>
+<blockquote>
+<ol start="2" style="list-style-type: decimal">
+<li>A fast food restaurant has a single drive-thru lane. A single customer service window is used to place orders, make the cash transaction, and deliver the food. Customers arrive at the window at an average of 40 customers per hour. The fast food worker has an average service time of 1 minute for each customer. Calculate the following performance measures for this M/M/1 system.</li>
+</ol>
+</blockquote>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBtZWFuIGFycml2YWwgcmF0ZVxud3JpdGVMaW5lcyhwYXN0ZShcImxhbWJkYTpcIiwgbGFtYmRhIDwtIDQwLCBcInBlb3BsZSBwZXIgaG91clwiKSlcbmBgYCJ9 -->
@@ -1994,9 +1842,14 @@ writeLines(paste(&quot;Pnplus:&quot;, Pnplus &lt;- rho ^ (n + 1)))</code></pre>
 <pre><code>Pnplus: 0.131687242798354</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
-</div>
+<!-- rnb-text-begin -->
+<blockquote>
+<p>What are your conclusions about the performance of this system?</p>
+</blockquote>
+<p>The system is relatively efficient, but could be made more efficient by increasing <code>lambda</code> to 60 or decreasing <code>mu</code> to 40 (but making your service less frequent is dumb).</p>
+<!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUiBOb3RlYm9vayIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKYGBge3J9CmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KGRhdGEudGFibGUpCmBgYAoKIyBJbmZpbml0ZSBQb3B1bGF0aW9uLCBTaW5nbGUgU2VydmVyLCBTaW5nbGUgTGluZSwgU2luZ2xlIFBoYXNlIChNTTEpCgpgYGB7cn0KIyBtZWFuIGFycml2YWwgcmF0ZQp3cml0ZUxpbmVzKHBhc3RlKCJsYW1iZGE6IiwgbGFtYmRhIDwtIDYsICJtaW51dGVzIikpCiMgbWVhbiBzZXJ2aWNlIHJhdGUKd3JpdGVMaW5lcyhwYXN0ZSgibXU6IiwgbXUgPC0gMTAsICJtaW51dGVzIikpCiMgYXZlcmFnZSBzeXN0ZW0gdXRpbGl6YXRpb24Kd3JpdGVMaW5lcyhwYXN0ZTAoInJobzogIiwgcmhvIDwtIGxhbWJkYSAvIG11ICogMTAwLCAiJSB1dGlsaXphdGlvbiIpKQpyaG8gPC0gcmhvIC8gMTAwCiMgYXZlcmFnZSBudW1iZXIgb2YgY3VzdG9tZXJzIGluIHN5c3RlbQp3cml0ZUxpbmVzKHBhc3RlKCJMOiIsIEwgPC0gbGFtYmRhIC8gKG11IC0gbGFtYmRhKSwgInBlb3BsZSIpKQojIGF2ZXJhZ2UgbnVtYmVyIG9mIGN1c3RvbWVycyBpbiBsaW5lCndyaXRlTGluZXMocGFzdGUoIkxROiIsIExRIDwtIHJobyAqIEwsICJwZW9wbGUiKSkKIyBhdmVyYWdlIHRpbWUgaW4gc3lzdGVtIChpbmNsdWRpbmcgc2VydmljZSkKd3JpdGVMaW5lcyhwYXN0ZSgiVzoiLCBXIDwtIDEgLyAobXUgLSBsYW1iZGEpICogNjAsICJtaW51dGVzIikpCiMgYXZlcmFnZSB0aW1lIHNwZW50IHdhaXRpbmcKd3JpdGVMaW5lcyhwYXN0ZSgiV1E6IiwgV1EgPC0gcmhvICogVywgIm1pbnV0ZXMiKSkKIyBwcm9iYWJpbGl0eSBvZiBuIGN1c3RvbWVycyBpbiB0aGUgc3lzdGVtCm4gPC0gMwp3cml0ZUxpbmVzKHBhc3RlKCJQbjoiLCBQbiA8LSAoMSAtIHJobykgKiAocmhvIF4gbikpKQojIHByb2JhYmlsaXR5IG9mID5uIGN1c3RvbWVycyBpbiB0aGUgc3lzdGVtCm4gPC0gNAp3cml0ZUxpbmVzKHBhc3RlKCJQbnBsdXM6IiwgUG5wbHVzIDwtIHJobyBeIChuICsgMSkpKQpgYGAKCiMjIEhvbWV3b3JrIAoKIyAxCmBgYHtyfQojIG1lYW4gYXJyaXZhbCByYXRlCndyaXRlTGluZXMocGFzdGUoImxhbWJkYToiLCBsYW1iZGEgPC0gMzAsICJwZW9wbGUgcGVyIGhvdXIiKSkKIyBtZWFuIHNlcnZpY2UgcmF0ZQp3cml0ZUxpbmVzKHBhc3RlKCJtdToiLCBtdSA8LSA0MCwgInBlb3BsZSBwZXIgaG91ciIpKQojIGF2ZXJhZ2Ugc3lzdGVtIHV0aWxpemF0aW9uCndyaXRlTGluZXMocGFzdGUwKCJyaG86ICIsIHJobyA8LSBsYW1iZGEgLyBtdSAqIDEwMCwgIiUgdXRpbGl6YXRpb24iKSkKcmhvIDwtIHJobyAvIDEwMAojIGF2ZXJhZ2UgbnVtYmVyIG9mIGN1c3RvbWVycyBpbiBzeXN0ZW0Kd3JpdGVMaW5lcyhwYXN0ZSgiTDoiLCBMIDwtIGxhbWJkYSAvIChtdSAtIGxhbWJkYSksICJwZW9wbGUiKSkKIyBhdmVyYWdlIG51bWJlciBvZiBjdXN0b21lcnMgaW4gbGluZQp3cml0ZUxpbmVzKHBhc3RlKCJMUToiLCBMUSA8LSByaG8gKiBMLCAicGVvcGxlIikpCiMgYXZlcmFnZSB0aW1lIGluIHN5c3RlbSAoaW5jbHVkaW5nIHNlcnZpY2UpCndyaXRlTGluZXMocGFzdGUoIlc6IiwgVyA8LSAxIC8gKG11IC0gbGFtYmRhKSAqIDYwLCAibWludXRlcyIpKQojIGF2ZXJhZ2UgdGltZSBzcGVudCB3YWl0aW5nCndyaXRlTGluZXMocGFzdGUoIldROiIsIFdRIDwtIHJobyAqIFcsICJtaW51dGVzIikpCiMgcHJvYmFiaWxpdHkgb2YgbiBjdXN0b21lcnMgaW4gdGhlIHN5c3RlbQpuIDwtIDEwCndyaXRlTGluZXMocGFzdGUoIlBuOiIsIFBuIDwtICgxIC0gcmhvKSAqIChyaG8gXiBuKSkpCiMgcHJvYmFiaWxpdHkgb2YgPm4gY3VzdG9tZXJzIGluIHRoZSBzeXN0ZW0KbiA8LSAxNQp3cml0ZUxpbmVzKHBhc3RlKCJQbnBsdXM6IiwgUG5wbHVzIDwtIHJobyBeIChuICsgMSkpKQpgYGAKCiMgMgpgYGB7cn0KIyBtZWFuIGFycml2YWwgcmF0ZQp3cml0ZUxpbmVzKHBhc3RlKCJsYW1iZGE6IiwgbGFtYmRhIDwtIDQwLCAicGVvcGxlIHBlciBob3VyIikpCiMgbWVhbiBzZXJ2aWNlIHJhdGUKd3JpdGVMaW5lcyhwYXN0ZSgibXU6IiwgbXUgPC0gNjAsICJwZW9wbGUgcGVyIGhvdXIiKSkKIyBhdmVyYWdlIHN5c3RlbSB1dGlsaXphdGlvbgp3cml0ZUxpbmVzKHBhc3RlMCgicmhvOiAiLCByaG8gPC0gbGFtYmRhIC8gbXUgKiAxMDAsICIlIHV0aWxpemF0aW9uIikpCnJobyA8LSByaG8gLyAxMDAKIyBhdmVyYWdlIG51bWJlciBvZiBjdXN0b21lcnMgaW4gc3lzdGVtCndyaXRlTGluZXMocGFzdGUoIkw6IiwgTCA8LSBsYW1iZGEgLyAobXUgLSBsYW1iZGEpLCAicGVvcGxlIikpCiMgYXZlcmFnZSBudW1iZXIgb2YgY3VzdG9tZXJzIGluIGxpbmUKd3JpdGVMaW5lcyhwYXN0ZSgiTFE6IiwgTFEgPC0gcmhvICogTCwgInBlb3BsZSIpKQojIGF2ZXJhZ2UgdGltZSBpbiBzeXN0ZW0gKGluY2x1ZGluZyBzZXJ2aWNlKQp3cml0ZUxpbmVzKHBhc3RlKCJXOiIsIFcgPC0gMSAvIChtdSAtIGxhbWJkYSkgKiA2MCwgIm1pbnV0ZXMiKSkKIyBhdmVyYWdlIHRpbWUgc3BlbnQgd2FpdGluZwp3cml0ZUxpbmVzKHBhc3RlKCJXUToiLCBXUSA8LSByaG8gKiBXLCAibWludXRlcyIpKQojIHByb2JhYmlsaXR5IG9mIG4gY3VzdG9tZXJzIGluIHRoZSBzeXN0ZW0KbiA8LSAzCndyaXRlTGluZXMocGFzdGUoIlBuOiIsIFBuIDwtICgxIC0gcmhvKSAqIChyaG8gXiBuKSkpCiMgcHJvYmFiaWxpdHkgb2YgPm4gY3VzdG9tZXJzIGluIHRoZSBzeXN0ZW0KbiA8LSA0CndyaXRlTGluZXMocGFzdGUoIlBucGx1czoiLCBQbnBsdXMgPC0gcmhvIF4gKG4gKyAxKSkpCmBgYAo=</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiSG9tZXdvcmsgNyIKYXV0aG9yOiAiR3VzIExpcGtpbiB+IGdsaXBraW42NzM3QGZsb3JpZGFwb2x5LmVkdSIKb3V0cHV0OgogIHBkZl9kb2N1bWVudDogZGVmYXVsdAogIGh0bWxfbm90ZWJvb2s6IGRlZmF1bHQKLS0tCgo+IDIuIEEgZmFzdCBmb29kIHJlc3RhdXJhbnQgaGFzIGEgc2luZ2xlIGRyaXZlLXRocnUgbGFuZS4gQSBzaW5nbGUgY3VzdG9tZXIgc2VydmljZSB3aW5kb3cgaXMgdXNlZCB0byBwbGFjZSBvcmRlcnMsIG1ha2UgdGhlIGNhc2ggdHJhbnNhY3Rpb24sIGFuZCBkZWxpdmVyIHRoZSBmb29kLiBDdXN0b21lcnMgYXJyaXZlIGF0IHRoZSB3aW5kb3cgYXQgYW4gYXZlcmFnZSBvZiA0MCBjdXN0b21lcnMgcGVyIGhvdXIuIFRoZSBmYXN0IGZvb2Qgd29ya2VyIGhhcyBhbiBhdmVyYWdlIHNlcnZpY2UgdGltZSBvZiAxIG1pbnV0ZSBmb3IgZWFjaCBjdXN0b21lci4gQ2FsY3VsYXRlIHRoZSBmb2xsb3dpbmcgcGVyZm9ybWFuY2UgbWVhc3VyZXMgZm9yIHRoaXMgTS9NLzEgc3lzdGVtLgoKYGBge3J9CiMgbWVhbiBhcnJpdmFsIHJhdGUKd3JpdGVMaW5lcyhwYXN0ZSgibGFtYmRhOiIsIGxhbWJkYSA8LSA0MCwgInBlb3BsZSBwZXIgaG91ciIpKQojIG1lYW4gc2VydmljZSByYXRlCndyaXRlTGluZXMocGFzdGUoIm11OiIsIG11IDwtIDYwLCAicGVvcGxlIHBlciBob3VyIikpCiMgYXZlcmFnZSBzeXN0ZW0gdXRpbGl6YXRpb24Kd3JpdGVMaW5lcyhwYXN0ZTAoInJobzogIiwgcmhvIDwtIGxhbWJkYSAvIG11ICogMTAwLCAiJSB1dGlsaXphdGlvbiIpKQpyaG8gPC0gcmhvIC8gMTAwCiMgYXZlcmFnZSBudW1iZXIgb2YgY3VzdG9tZXJzIGluIHN5c3RlbQp3cml0ZUxpbmVzKHBhc3RlKCJMOiIsIEwgPC0gbGFtYmRhIC8gKG11IC0gbGFtYmRhKSwgInBlb3BsZSIpKQojIGF2ZXJhZ2UgbnVtYmVyIG9mIGN1c3RvbWVycyBpbiBsaW5lCndyaXRlTGluZXMocGFzdGUoIkxROiIsIExRIDwtIHJobyAqIEwsICJwZW9wbGUiKSkKIyBhdmVyYWdlIHRpbWUgaW4gc3lzdGVtIChpbmNsdWRpbmcgc2VydmljZSkKd3JpdGVMaW5lcyhwYXN0ZSgiVzoiLCBXIDwtIDEgLyAobXUgLSBsYW1iZGEpICogNjAsICJtaW51dGVzIikpCiMgYXZlcmFnZSB0aW1lIHNwZW50IHdhaXRpbmcKd3JpdGVMaW5lcyhwYXN0ZSgiV1E6IiwgV1EgPC0gcmhvICogVywgIm1pbnV0ZXMiKSkKIyBwcm9iYWJpbGl0eSBvZiBuIGN1c3RvbWVycyBpbiB0aGUgc3lzdGVtCm4gPC0gMwp3cml0ZUxpbmVzKHBhc3RlKCJQbjoiLCBQbiA8LSAoMSAtIHJobykgKiAocmhvIF4gbikpKQojIHByb2JhYmlsaXR5IG9mID5uIGN1c3RvbWVycyBpbiB0aGUgc3lzdGVtCm4gPC0gNAp3cml0ZUxpbmVzKHBhc3RlKCJQbnBsdXM6IiwgUG5wbHVzIDwtIHJobyBeIChuICsgMSkpKQpgYGAKCj4gV2hhdCBhcmUgeW91ciBjb25jbHVzaW9ucyBhYm91dCB0aGUgcGVyZm9ybWFuY2Ugb2YgdGhpcyBzeXN0ZW0/CgpUaGUgc3lzdGVtIGlzIHJlbGF0aXZlbHkgZWZmaWNpZW50LCBidXQgY291bGQgYmUgbWFkZSBtb3JlIGVmZmljaWVudCBieSBpbmNyZWFzaW5nIGBsYW1iZGFgIHRvIDYwIG9yIGRlY3JlYXNpbmcgYG11YCB0byA0MCAoYnV0IG1ha2luZyB5b3VyIHNlcnZpY2UgbGVzcyBmcmVxdWVudCBpcyBkdW1iKS4K</div>
 
 
 
@@ -2043,7 +1896,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("Chapter 12.Rmd");
+  window.initializeSourceEmbed("Homework 7.Rmd");
   window.initializeCodeFolding("show" === "show");
 });
 </script>

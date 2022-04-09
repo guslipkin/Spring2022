@@ -1,0 +1,125 @@
+---
+title: "SVM"
+output: html_notebook
+---
+
+We will use a problem from the back of the book to demonstrate SVM. We will use the Auto dataset to predict whether a given car gets high or low gas mileage. 
+(a) Create a binary variable that takes on a 1 for cars with gas mileage above the median, and a 0 for cars with gas mileage below the median.
+(b) Fit a support vector classifier to the data with various values of cost, in order to predict whether a car gets high or low gas mileage. Report the cross-validation errors associated with different values of this parameter. Comment on your results. Note you will need to fit the classifier without the gas mileage variable to produce sensible results.
+(c) Now repeat (b), this time using SVMs with radial and polynomial basis kernels, with different values of gamma and degree and cost. Comment on your results.
+(d) Make some plots to back up your assertions in (b) and (c).
+
+```{r}
+# Load the required libraries
+library(ISLR2)
+library(caret)
+library(MASS)
+library(MLeval)
+library(tidyverse)
+library(data.table)
+set.seed(1234)
+```
+
+```{r}
+dt <- Auto %>% select(-name)
+```
+Create a new dataframe to remove missing values and delete the column name
+
+(a) Create a binary variable that takes on a 1 for cars with gas mileage above the median, and a 0 for cars with gas mileage below the median.
+
+```{r}
+dt$mpg <- as.factor(ifelse(dt$mpg > median(dt$mpg), "YES", "NO"))
+```
+
+(b) Fit a support vector classifier to the data with various values of cost, in order to predict whether a car gets high or low gas mileage. Report the cross-validation errors associated with different values of this parameter. Comment on your results. Note you will need to fit the classifier without the gas mileage variable to produce sensible results.
+
+We will use the caret package to divide the data into testing and training sets
+```{r}
+rowPicker <- createDataPartition(y=dt$mpg, p=0.8, list=FALSE)
+train <- dt[rowPicker,]
+test <- dt[-rowPicker,]
+```
+
+Initialize the trainControl
+
+```{r}
+control <- trainControl(method = "cv", number = 10, classProbs = TRUE, 
+                        summaryFunction = twoClassSummary, 
+                        savePredictions = TRUE)
+```
+
+Create a grid of vales for the tuning parameter C
+
+```{r}
+tGrid <- expand.grid(C = c(.01, .05, .1, .25, .5, .75, 1, 1.25, 5, 10))
+```
+
+Estimate the SVM Model
+
+```{r}
+svmModel <- train(mpg ~ ., train, method = "svmLinear", tuneGrid = tGrid,
+                  trControl = control, metric = "ROC", 
+                  preProcess = c("center", "scale"))
+svmModel
+```
+Check performance of the linear model
+
+```{r}
+svmPred <- predict(svmModel, test)
+confusionMatrix(svmPred, test$mpg)
+```
+
+
+
+(c) Now repeat (b), this time using SVMs with radial and polynomial basis kernels, with different values of gamma and degree and cost. Comment on your results.
+
+create a range of values for sigma and C 
+```{r}
+rGrid <- expand.grid(C = c(.1, .25, .5, .75, 1, 1.25, 1.5),
+                     sigma = c(1e-3, 1e-2, 1e-1))
+```
+
+Model with Radial Kernel
+
+```{r}
+radModel <- train(mpg ~ ., train, method = "svmRadial", tuneGrid = rGrid,
+                  trControl = control, metric = "ROC", 
+                  preProcess = c("center", "scale"))
+radModel
+```
+Check performance of the radial kernel model
+
+```{r}
+radPred <- predict(radModel, test)
+confusionMatrix(radPred, test$mpg)
+```
+
+Model with polynomial Kernel
+
+```{r}
+polyModel <- train(mpg ~ ., train, method = "svmPoly",
+                  trControl = control, metric = "ROC", 
+                  preProcess = c("center", "scale"))
+polyModel
+```
+
+Check performance of the polynomial model
+
+```{r}
+polyPred <- predict(polyModel, test)
+confusionMatrix(polyPred, test$mpg)
+```
+Compute ROC curves to compare the models using MLeval package
+
+```{r}
+plot_comp <- evalm(list1 = list(svmModel, radModel, polyModel),
+                   gnames = c("Linear SVC", "Radial SVM", "Polynomial SVM"))
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

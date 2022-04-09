@@ -1,0 +1,37 @@
+---
+title: "Homework 7"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+> 2. A fast food restaurant has a single drive-thru lane. A single customer service window is used to place orders, make the cash transaction, and deliver the food. Customers arrive at the window at an average of 40 customers per hour. The fast food worker has an average service time of 1 minute for each customer. Calculate the following performance measures for this M/M/1 system.
+
+```{r}
+# mean arrival rate
+writeLines(paste("lambda:", lambda <- 40, "people per hour"))
+# mean service rate
+writeLines(paste("mu:", mu <- 60, "people per hour"))
+# average system utilization
+writeLines(paste0("rho: ", rho <- lambda / mu * 100, "% utilization"))
+rho <- rho / 100
+# average number of customers in system
+writeLines(paste("L:", L <- lambda / (mu - lambda), "people"))
+# average number of customers in line
+writeLines(paste("LQ:", LQ <- rho * L, "people"))
+# average time in system (including service)
+writeLines(paste("W:", W <- 1 / (mu - lambda) * 60, "minutes"))
+# average time spent waiting
+writeLines(paste("WQ:", WQ <- rho * W, "minutes"))
+# probability of n customers in the system
+n <- 3
+writeLines(paste("Pn:", Pn <- (1 - rho) * (rho ^ n)))
+# probability of >n customers in the system
+n <- 4
+writeLines(paste("Pnplus:", Pnplus <- rho ^ (n + 1)))
+```
+
+> What are your conclusions about the performance of this system?
+
+The system is relatively efficient, but could be made more efficient by increasing `lambda` to 60 or decreasing `mu` to 40 (but making your service less frequent is dumb).

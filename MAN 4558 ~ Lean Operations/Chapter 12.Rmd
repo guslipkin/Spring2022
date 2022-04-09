@@ -39,9 +39,9 @@ writeLines(paste("Pnplus:", Pnplus <- rho ^ (n + 1)))
 # 1
 ```{r}
 # mean arrival rate
-writeLines(paste("lambda:", lambda <- 60 / 30, "minutes"))
+writeLines(paste("lambda:", lambda <- 30, "people per hour"))
 # mean service rate
-writeLines(paste("mu:", mu <- 1.5, "minutes"))
+writeLines(paste("mu:", mu <- 40, "people per hour"))
 # average system utilization
 writeLines(paste0("rho: ", rho <- lambda / mu * 100, "% utilization"))
 rho <- rho / 100
@@ -64,9 +64,9 @@ writeLines(paste("Pnplus:", Pnplus <- rho ^ (n + 1)))
 # 2
 ```{r}
 # mean arrival rate
-writeLines(paste("lambda:", lambda <- 60 / 40, "minutes"))
+writeLines(paste("lambda:", lambda <- 40, "people per hour"))
 # mean service rate
-writeLines(paste("mu:", mu <- 1, "minutes"))
+writeLines(paste("mu:", mu <- 60, "people per hour"))
 # average system utilization
 writeLines(paste0("rho: ", rho <- lambda / mu * 100, "% utilization"))
 rho <- rho / 100
