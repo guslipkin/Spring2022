@@ -1,0 +1,124 @@
+---
+title: "Principal Component Analysis"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(factoextra)
+library(ISLR2)
+```
+
+## Example 1: Cereal Data
+
+Please download the CerealData.xlsx from Canvas. 
+
+```{r}
+dt <- data.table::fread("Data/CerealData.csv")
+dt
+```
+
+Let us make a smaller dataset by removing the first three columns. 
+
+```{r}
+dt <- na.omit(dt[, !1:3])
+```
+
+Estimate PCA
+```{r}
+pca <- prcomp(dt)
+summary(pca)
+```
+The first three Principal Components account for 96.5% of the total variation in 13 variables. 
+
+Check the loadings of the principal components
+
+```{r}
+pca$rotation
+```
+
+The first principal component is dominated by sodium content (positive loading) and the second component is dominated by potassium (negative loading in this case). The sodium and potassium contents are measured in milligrams whereas other quantities are measured in grams. This scale difference is causing this high loadings and needs to be fixed. prcomp() by default centers but we need to specify scale=TRUE to standardize the variables. 
+
+```{r}
+pca <- prcomp(dt, scale = TRUE)
+summary(pca)
+```
+Now we find that 8 principal components are needed to explain 96% of the variability. 
+
+Check the new loadings
+
+```{r}
+pca$rotation
+```
+By looking at the loadings, we see that the first principal component measures the balance between calories and cups (large positive loadings) vs rating, fiber, protein and potassium (large negative weights). High scores on PC 1 imply cereal is high in calories but low in fiber, protein and potassium. Not s surprise that this type of cereal has low rating
+Second principal component is most affected by weight. 
+
+Create a bi-plot
+
+```{r}
+fviz_pca_biplot(pca)
+```
+
+Graph of Variables - Positively correlated variables point to the same side of the plot. Negatively correlated variables point to the opposite sides of the graph. 
+
+```{r}
+fviz_pca_var(pca, 
+             col.var = "contrib", # color by contributions to the PC
+             gradient.cols = c("gray", "purple"),
+             repel=TRUE # avoid text overlapping
+             )
+```
+
+Scree Plot
+
+```{r}
+fviz_screeplot(pca)
+fviz_eig(pca)
+```
+
+
+## Example 2
+We will use the USArrests data from the ISLR2 textbook library to perform  PCA
+Load the data and check the first few rows
+
+```{r}
+dt <- USArrests
+dt <- na.omit(dt)
+```
+The data contains information on arrests per 100,000 residents for assault, murder and rape in each state in the US. 
+
+```{r}
+pca <- prcomp(dt, scale = TRUE)
+summary(pca)
+```
+Explore the loadings 
+
+```{r}
+pca$rotation
+```
+Variable Plot
+
+```{r}
+fviz_pca_var(pca, 
+             col.var = "contrib", # color by contributions to the PC
+             gradient.cols = c("gray", "purple"),
+             repel=TRUE # avoid text overlapping
+             )
+```
+
+Create a biplot in the PC1-PC2 coordinate systems
+
+```{r}
+fviz_pca_biplot(pca)
+```
+
+Scree Plot
+
+```{r}
+fviz_screeplot(pca)
+```
+
+
+
