@@ -1,0 +1,232 @@
+---
+title: "Final Exam Take-home"
+author: "Gus Lipkin ~ glipkin6737@floridapoly.edu"
+output: 
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+> This take-home model estimation work in R accounts for 40 points on your midterm exam. Please ensure the guidelines for submissions are followed to receive full credit. Late submissions will not be accepted. 
+>
+> Please include relevant explanation of your results in your R notebook. You may turn in a html file or knit pdf file.  
+ 
+```{r}
+library(tidyverse)
+library(data.table)
+library(ISLR2)
+library(caret)
+library(MLeval)
+library(factoextra)
+library(NbClust)
+```
+ 
+# Problem 1 (15 points) 
+> Use the OJ dataset from the textbook’s ISLR2 library to answer the following questions 
+
+```{r}
+# load data
+oj <- data.table(ISLR2::OJ)
+
+# recode columns
+factorCols <- c("StoreID", "STORE")
+oj[, (factorCols) := lapply(.SD, as.factor), .SDcols = factorCols]
+logicalCols <- c("SpecialCH", "SpecialMM")
+oj[, (logicalCols) := lapply(.SD, as.logical), .SDcols = logicalCols]
+
+# preview the data
+head(oj)
+```
+
+
+## a
+> Provide a data dictionary and summary statistics of the data.  
+
+### Data Dictionary
+
+| Variable       | Description                                                  | Type    |
+| -------------- | ------------------------------------------------------------ | ------- |
+| Purchase       | A factor with levels `CH` and `MM`indicating whether the customer purchased Citrus Hill or Minute Maid Orange Juice | Factor  |
+| WeekOfPurchase | Week of purchase                                             | Numeric |
+| StoreID        | Store ID                                                     | Factor  |
+| PriceCH        | Price charged for CH                                         | Numeric |
+| PriceMM        | Price charged for MM                                         | Numeric |
+| DiscCH         | Discount offered for CH                                      | Numeric |
+| DiscMM         | Discount offered for MM                                      | Numeric |
+| SpecialCH      | Indicator of special on CH                                   | Logical |
+| SpecialMM      | Indicator of special on MM                                   | Logical |
+| LoyalCH        | Customer brand loyalty for CH                                | Numeric |
+| SalePriceMM    | Sale price for MM                                            | Numeric |
+| SalePriceCH    | Sale price for CH                                            | Numeric |
+| PriceDiff      | Sale price of MM less sale price of CH                       | Numeric |
+| Store7         | A factor with levels `No` and `Yes` indicating whether the sale is at Store 7 | Factor  |
+| PctDiscMM      | Percentage discount for MM                                   | Numeric |
+| PctDiscCH      | Percentage discount for CH                                   | Numeric |
+| ListPriceDiff  | List price of MM less list price of CH                       | Numeric |
+| STORE          | Which of the 5 possible stores the sale occured at           | Factor  |
+
+### Summary Statistics
+```{r}
+summary(oj)
+```
+
+## b
+> Create a training and test dataset with 80-20 split.
+
+```{r}
+set.seed(2022)
+rowPicker <- createDataPartition(y=oj$Purchase, p=0.8, list=FALSE)
+train <- oj[rowPicker]
+test <- oj[-rowPicker]
+
+control <- trainControl(method = "cv", number = 10, classProbs = TRUE, 
+                        summaryFunction = twoClassSummary, 
+                        savePredictions = TRUE)
+```
+
+## c
+> Fit a support vector classifier with Purchase as the response variable and other variables as independent variables.  
+
+```{r}
+tGrid <- expand.grid(C = c(.01, .05, .1, .25, .5, .75, 1, 1.25, 5, 10))
+svmModel <- train(Purchase ~ ., train, method = "svmLinear", tuneGrid = tGrid,
+                  trControl = control, metric = "ROC", 
+                  preProcess = c("center", "scale"))
+svmModel
+
+svmPred <- predict(svmModel, test)
+confusionMatrix(svmPred, test$Purchase)
+```
+
+## d
+> Fit a support vector machine with a radial kernel.
+
+```{r}
+rGrid <- expand.grid(C = c(.1, .25, .5, .75, 1, 1.25, 1.5),
+                     sigma = c(1e-3, 1e-2, 1e-1))
+radModel <- train(Purchase ~ ., train, method = "svmRadial", tuneGrid = rGrid,
+                  trControl = control, metric = "ROC", 
+                  preProcess = c("center", "scale"))
+radModel
+
+radPred <- predict(radModel, test)
+confusionMatrix(radPred, test$Purchase)
+```
+
+
+## e
+> Fit a support vector machine with a polynomial kernel. 
+
+```{r}
+polyModel <- train(Purchase ~ ., train, method = "svmPoly",
+                  trControl = control, metric = "ROC", 
+                  preProcess = c("center", "scale"))
+polyModel
+
+polyPred <- predict(polyModel, test)
+confusionMatrix(polyPred, test$Purchase)
+```
+
+## f
+> Which classifier performs best?
+
+```{r}
+plot_comp <- evalm(list1 = list(svmModel, radModel, polyModel),
+                   gnames = c("Linear SVC", "Radial SVM", "Polynomial SVM"))
+```
+
+All three measures agree that the polynomial svm is better because it has the highest auc. However, it is not that much better so I'm not sure it's worth the extra computation time.
+ 
+# Problem 2 (10 points) 
+> Use the cereals data on CANVAS (Used this in R classwork on PCA) to perform K-means and hierarchical clustering. Please do not forget to remove missing values if any and include relevant plots. Also include data dictionary and summary statistics.
+
+```{r}
+# load data
+cereals <- fread("../../Labs/Data/CerealData.csv")
+
+# remove missing values
+cereals <- na.omit(cereals)
+```
+
+## Data Dictionary
+
+| Variable | Description                                                  | Type      |
+| -------- | ------------------------------------------------------------ | --------- |
+| name     | Name of cereal                                               | Character |
+| mfr      | Manufacturer of cereal<br />A = American Home Food Products <br />G = General Mills <br />K = Kelloggs <br />N = Nabisco <br />P = Post <br />Q = Quaker Oats <br />R = Ralston Purina | Factor    |
+| type     | hot, cold                                                    | Factor    |
+| calories | calories per serving                                         | Numeric   |
+| protein  | grams of protein                                             | Numeric   |
+| fat      | grams of fat                                                 | Numeric   |
+| sodium   | milligrams of sodium                                         | Numeric   |
+| fiber    | grams of dietary fiber                                       | Numeric   |
+| carbo    | grams of complex carbohydrates                               | Numeric   |
+| sugars   | grams of sugars                                              | Numeric   |
+| potass   | milligrams of potassium                                      | Numeric   |
+| vitamins | vitamins and minerals - 0, 25, or 100, indicating the typical percentage of FDA recommended | Factor    |
+| shelf    | display shelf (1, 2, 3, counting from the floor)             | Factor    |
+| weight   | weight in ounces of one serving                              | Numeric   |
+| cups     | number of cups in one serving                                | Numeric   |
+| rating   | rating of the cereals                                        | Numeric   |
+
+## Summary Statistics
+```{r}
+# remove the name column
+cereals <- cereals[, !c("name")]
+summary(cereals)
+```
+
+## Hierarchical Clustering
+```{r}
+cereals <- cereals[, .(calories, protein, fat, sodium, fiber, carbo, sugars, potass, vitamins, shelf, weight, cups, rating)]
+dis <- dist(cereals)
+hc <- hclust(dis, method = "complete")
+plot(hc, main="Complete Linkage")
+
+std_cereals <- scale(cereals, center = T, scale = T)
+hc_std <- hclust(dist(std_cereals), method = "complete")
+plot(hc_std, main = "Complete Linkage with Standardized Data")
+
+plot(hc_std, ann=FALSE, hang = -1)
+rect.hclust(hc_std, k=3, border=2:5)
+```
+
+## K-Means Clustering
+The third hierarchical clustering plot suggests that three clusters is optimal, but I want to double check.
+
+```{r}
+res.nbclust <- NbClust(cereals[, .(calories, protein, fat, sodium, fiber, carbo, 
+                             sugars, potass, weight, cups, rating)], 
+                       distance = "euclidean", min.nc = 2, max.nc = 9, 
+                  method = "complete", index ="all")
+factoextra::fviz_nbclust(res.nbclust)
+```
+
+3 is optimal.
+
+```{r}
+kmeans <- kmeans(cereals[, .(calories, protein, fat, sodium, fiber, carbo, 
+                             sugars, potass, weight, cups, rating)], 3)
+cereals$test <- as.factor(kmeans$cluster)
+
+fviz_cluster(kmeans, data = cereals, choose.vars = c("calories", "rating")) +
+  theme_minimal()
+```
+
+I was curious if calories had any impact on rating and if they were grouped. The two variables seem to have some impact, but don't tell the whole story. Maybe we should test if Honey Bunches of Oats clusters better?
+ 
+# Problem 3 (15 Points) 
+ > Use the USArrests data from the textbook (ISLR2 library) to perform PCA. Please ensure to include the plots.
+ 
+```{r}
+head(USArrests)
+arrests_pca <- prcomp(USArrests, scale. = T)
+summary(arrests_pca)
+arrests_pca$rotation
+fviz_pca_biplot(arrests_pca, 
+                select.ind = list(names = c("Florida", "Nevada", "California",
+                                            "Michigan", "New Hampshire", "Maine",
+                                            "North Dakota")))
+```
+ 
+ Comments: Maine and North Dakota have the most in common and are close to New Hampshire, while the other four states are similar in some respects but still quite different.
