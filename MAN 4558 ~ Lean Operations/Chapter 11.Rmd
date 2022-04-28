@@ -9,6 +9,8 @@ output:
 library(tidyverse)
 library(data.table)
 library(combinat)
+library(DiagrammeR)
+library(webshot)
 ```
 
 # Designing Process Layouts
@@ -86,5 +88,210 @@ totals <- unlist(lapply(perms, function(x) {
 
 min(totals)
 perms[which(totals == min(totals))]
+```
+
+# Line Balancing
+
+```{r}
+dt <- data.frame("task" = c("A", "B", "C", "D", "E", "E", "F", "G", "H"),
+                 "time" = c(55, 30, 35, 22, 50, NA, 15, 5, 10),
+                 "predecessor" = c(NA, "A", "A", "B", "B", "C", "C", "F", "G"))
+forecastedDemand <- 50
+```
+
+
+## Draw the precedence relationship network
+
+```{r}
+writeLines(paste("Total time:", 
+                 totalTime <- sum(unique(dt[, c("task", "time")])[, "time"], na.rm = TRUE)))
+
+mermaid(c("graph LR;",
+          apply(dt[rowSums(is.na(dt)) == 0,], 1, function(x) { 
+            paste0(x["predecessor"], " --> ", x["task"], ";") 
+            })
+          ))
+```
+
+## Potential Output Rate per Hour
+
+```{r}
+writeLines(paste("The maximum output per hour is:", 
+                 maxOutput <- 3600 / totalTime))
+
+if(forecastedDemand > maxOutput) {
+  writeLines(paste("Forecasted demand is greater than maximum output so an assembly line with work stations is a possibility"))
+} else {
+  writeLines(paste("Forecasted demand is less than maximum output so an assembly line with work stations is not a possibility"))
+}
+```
+
+## Determine the takt time
+
+```{r}
+writeLines(paste("The takt time is:", taktTime <- 3600 / forecastedDemand))
+writeLines(paste("The maximum bottleneck output is:", 
+                 bottleneckOutput <- 3600 / max(dt$time, na.rm = TRUE)))
+```
+
+## Theoretical Minimum Workstations
+
+```{r}
+writeLines(paste("The theoretical minimum workstations is:", 
+                 minimumStations <- totalTime / taktTime))
+
+if(minimumStations %% 1 != 0) {
+  writeLines(paste("However, because you cannot have a partial workstation, the real number is:", ceiling(minimumStations)))
+}
+```
+
+## Assign tasks to work stations
+
+```{r, echo=FALSE, eval=FALSE, include=FALSE}
+stations <- data.frame("station" = 1:4,
+                       "eligible" = NA_character_,
+                       "selected" = NA_character_,
+                       "time" = NA_integer_,
+                       "idle" = NA_integer_)
+
+dt$dependencies <- sapply(1:nrow(dt), function(x) { 
+  p <- unique(dt$predecessor[1:x])
+  paste(p[!is.na(p)], collapse = "") 
+  })
+dt
+
+dt <- data.table::data.table(dt)[, groupTime := sum(time, na.rm = TRUE), 
+                                 by = dependencies]
+
+dt[, groupID := .GRP, by = predecessor]
+dt$completed <- sapply(dt$groupID, function(x) { paste0(LETTERS[1:(x-1)], collapse = "") })
+
+dtCopy <- dt[!duplicated(dt[, .(dependencies, groupTime)])]
+
+dtCopy$groupID <- 0
+groupID <- 1
+
+for(x in 1:nrow(dtCopy)) {
+  for (y in 1:nrow(dtCopy)) {
+    if (sum(dtCopy$groupTime[x:y]) <= taktTime) {
+      dtCopy$groupID[x:y] <- groupID
+    } else {
+      groupID <- groupID + 1
+    }
+  }
+}
+
+dtCopy[, groupID := .GRP, by = groupID]
+
+for(x in 1:nrow(stations)) {
+  stations$time[x] <- sum(dtCopy$groupTime[x])
+  stations$idle[x] <- taktTime - stations$time[x]
+}
+```
+
+| Work Station | Eligible Tasks | Task Selected | Time | Idle |
+| ------------ | -------------- | ------------- | ---- | ---- |
+| 1            | A              | A             | 55   | 17   |
+| 2            | BC             | BC            | 65   |  7   |
+| 3            | DEF            | DE            | 72   |  0   |
+| 4            | FGH            | FGH           | 30   | 52   |
+
+```{r}
+stations <- data.frame("station" = 1:4,
+                       "eligible" = c("A", "BC", "DEF", "FGH"),
+                       "selected" = c("A", "BC", "DE", "FGH"),
+                       "time" = c(55, 65, 72, 30),
+                       "idle" = c(17, 7, 0, 52))
+```
+
+
+## Compute Efficiency and balance delay
+
+```{r}
+writeLines(paste("The efficiency is:", sum(stations$time) / (taktTime * ceiling(minimumStations))))
+```
+
+# Product Line Balancing Problem
+
+```{r}
+dt <- data.frame("task" = c("A", "B", "C", "D", "E", "F", "G", "G"),
+                 "time" = c(60, 12, 35, 55, 10, 50, 5, 5),
+                 "predecessor" = c(NA, "A", "B", "A", "D", "E", "F", "C"))
+forecastedDemand <- 40
+```
+
+## 1 Precedence Relationship Network
+
+```{r}
+writeLines(paste("Total time:", 
+                 totalTime <- sum(unique(dt[, c("task", "time")])[, "time"])))
+
+mermaid(c("graph LR;",
+          apply(dt[rowSums(is.na(dt)) == 0,], 1, function(x) { 
+            paste0(x["predecessor"], " --> ", x["task"], ";") 
+            })
+          ))
+```
+
+## 2 Determine the Output Rate per hour (day)
+
+```{r}
+writeLines(paste("The maximum output per hour is:", 
+                 maxOutput <- 3600 / totalTime))
+writeLines(paste("The maximum output per 8 hour workday is:", maxOutput * 8))
+
+if(forecastedDemand > maxOutput) {
+  writeLines(paste("Forecasted demand is greater than maximum output so an",
+                   "assembly line with work stations is a possibility"))
+} else {
+  writeLines(paste("Forecasted demand is less than maximum output so an", 
+                   "assembly line with work stations is not a possibility"))
+}
+```
+
+## 3 Determine the takt time and maximum bottleneck output
+
+```{r}
+writeLines(paste("The takt time is:", taktTime <- 3600 / forecastedDemand))
+writeLines(paste("The maximum bottleneck output is:", 
+                 bottleneckOutput <- 3600 / max(dt$time)))
+```
+
+## 4 Compute the theoretical minimum workstations
+
+```{r}
+writeLines(paste("The theoretical minimum workstations is:", 
+                 minimumStations <- totalTime / taktTime))
+
+if(minimumStations %% 1 != 0) {
+  writeLines(paste("However, because you cannot have a partial workstation,",
+                   "the real number is:", 
+                   minimumStations <- ceiling(minimumStations)))
+}
+```
+
+## 5 Assign tasks to workstations
+
+| Work Station | Eligible Tasks | Task Selected | Time | Idle |
+| ------------ | -------------- | ------------- | ---- | ---- |
+| 1            | AB             | AB            | 72   | 18   |
+| 2            | CD             | CD            | 90   | 0    |
+| 3            | EFG            | EFG           | 65   | 25   |
+
+```{r}
+stations <- data.frame("station" = 1:ceiling(minimumStations),
+                       "eligible" = c("AB", "CD", "EFG"),
+                       "selected" = c("AB", "CD", "EFG"),
+                       "time" = c(72, 90, 65),
+                       "idle" = c(18, 0, 25))
+```
+
+## 6 Compute Efficiency and balance delay
+
+```{r}
+writeLines(paste0("The efficiency is: ", 
+                  efficiency <- totalTime / 
+                    (taktTime * minimumStations) * 100, "%"))
+writeLines(paste0("The balance delay is: ", 100 - efficiency, "%"))
 ```
 
