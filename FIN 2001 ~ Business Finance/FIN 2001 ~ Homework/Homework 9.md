@@ -17,7 +17,7 @@
    2. Receivables period = AR/(Sales/365) –> $35=\frac{AR}{\frac{1200000}{365}}$ –> $AR =115068.49$
    3. Payment period = AP/(COGS/365) –> $40=\frac{AP}{\frac{900000}{365}}$ –> $AP=98630.14$
    4. Net financing = AR + Inventory – AP –> $115068.49 + 135616.55-98630.14=152054.79$
-7. A goal of a company’s cash management policy is to **minimize cash requirement**.
+7. A goal of a company’s cash management policy is to **reduce the need to borrow**.
 8. 5 C’s of credit analysis
    1. Character – credit history
    2. Capacity – debt-to-income ratio

@@ -2,7 +2,7 @@
 
 > Gus Lipkin
 
-## Chapter 13
+## Chapter 14
 
 1. The method of evaluating the firm’s performance over time is known as **trend analysis**.
 2. Ratios used to compare different firms at the same point in time belong to a category of 
